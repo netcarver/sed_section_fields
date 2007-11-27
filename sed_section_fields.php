@@ -42,24 +42,21 @@ div#sed_help h3 { color: #693; font: bold 12px Arial, sans-serif; letter-spacing
 
 h1(#top). sed_section_fields
 
+Introduces section-specific named overrides for custom fields.
+
 |_. Copyright 2007 Stephen Dickinson. |
-
-h2(#tag). The @sed_hello@ tag.
-
-This is the only tag in this plugin.
-
-|_. Attribute    |_. Default Value |_. Status   |_. Description |
-| 'name'       | 'Fred'     | Optional | The name you want to display. |
-
-*Emphasized items* have been added or changed since the last release.
--Struck out items- have been removed since the last release.
 
 h2(#changelog). Change Log
 
-v0.1 Features of the new template & compiler...&#8230;
+v0.1
 
-* This plugin template has a special section for storing the Help section's CSS. This section doesn't get pulled through the textile mangler, it simply gets appended at the head of your help section so you can style it properly.
-* The replacement template compiler 'zem_tpl.php' also takes care of checking if a client-only plugin references admin only features and stops the compilation if it does. *Why?* If the plugin is accessing admin-side resources, it should be marked as an admin side plugin, not a client-only plugin. This saves wasted time and effort if you happen to compile and install a plugin that you expect to work on the admin side but doesn't.
+* Use the presentations > section tab to setup custom field names for any article
+in that section.
+* When you write or edit an article, your per-section custom fields will appear
+-- possibly overriding the site-wide labels.
+* If you change the section of an article and then edit it, the new sections
+labels will appear.
+
 
 
 </div>
@@ -71,6 +68,332 @@ v0.1 Features of the new template & compiler...&#8230;
 
 if( 'admin' == @txpinterface )
 	{
+	register_callback( '_sed_sf_handle_article'    , 'article' , '' , 1 );
+	register_callback( '_sed_sf_insert_cfnames'    , 'section' , '' , 1 );
+	register_callback( '_sed_sf_xml_serve_cfnames' , 'sed_sf' );
+	}
+
+
+function _sed_sf_make_section_key( $section )
+	{
+	$key = 'sed_sf_' . $section . '_field_labels';
+	return $key;
+	}
+
+
+function _sed_sf_insert_cfnames_into_sections( $page )
+	{
+	#
+	#	Inserts the name text inputs into each sections' edit controls
+	# current implementation uses output buffer...
+	#
+	global $DB;
+
+	if( !isset( $DB ) )
+		$DB = new db;
+
+	$rows = safe_rows_start( '*' , 'txp_section' , "1=1" );
+	$c = @mysql_num_rows($rows);
+	if( $rows && $c > 0 )
+		{
+		while( $row = nextRow($rows) )
+			{
+			$name  = $row['name'];
+			$title = $row['title'];
+
+			$cf_names = _sed_sf_get_cfnames( $name );
+
+			$f = '<input type="text" name="name" value="' . $name . '" size="20" class="edit" tabindex="1" /></td></tr>'. n.n . '<tr><td class="noline" style="text-align: right; vertical-align: middle;">' . gTxt('section_longtitle') . ': </td><td class="noline"><input type="text" name="title" value="' . $title . '" size="20" class="edit" tabindex="1" /></td></tr>';
+
+			$r = '';
+			for( $x = 1; $x <= 10; $x++ )
+				{
+				$value = $cf_names[ $x ];
+				$field_name = 'cf_' . $x . '_set';
+				$r .= '<tr><td class="noline" style="text-align: right; vertical-align: middle;">Label for custom field #' . $x . ': </td><td class="noline">';
+				$r .= '<input name="' . $field_name . '" value="'.$value.'" size="20" class="edit" type="text" >';
+				$r .= '</td></tr>'.n;
+				}
+			$page = str_replace( $f , $f.$r , $page );
+			}
+		}
+
+	return $page;
+	}
+
+function _sed_sf_insert_cfnames( $event , $step )
+	{
+	if( $step == 'section_save' )
+		_sed_sf_update_cfnames();
+
+	if( $step == '' || $step == 'section_save' )
+		ob_start( '_sed_sf_insert_cfnames_into_sections' );
+	}
+
+function _sed_sf_update_cfnames()
+	{
+	#
+	#	Stores the custom-field labels for the section being saved
+	#
+	global $prefs;
+
+	$section    = gps( 'name' );
+	$oldsection = gps( 'old_name' );
+
+	if( $section !== $oldsection )	# renamed section?
+		{
+		$oldkey = doSlash( _sed_sf_make_section_key( $oldsection ) );
+		safe_delete('txp_prefs', "`name`='$oldkey'");
+		}
+
+	#
+	#	Build array of submitted values...
+	#
+	$data = array();
+	for( $x = 1; $x <= 10; $x++ )
+		{
+		$field_name = 'cf_' . $x . '_set';
+		$value = ps( $field_name );
+		if( isset( $value ) )
+			$data[$x] = $value;
+		}
+
+	#
+	#	Store the data...
+	#
+	$key = doSlash( _sed_sf_make_section_key( $section ) );
+	doArray( $data , 'doSlash' );
+	$value = serialize( $data );
+	set_pref( $key , $value , 'sed_sf' , 2 );
+	$prefs[ $key ] = $value;
+	}
+
+function _sed_sf_get_cfnames( $section )
+	{
+	#
+	#	Given the name of a section, will grab the labels for the custom fields
+	# as an array 'number' => 'label'
+	#
+	global $prefs;
+
+	$key = _sed_sf_make_section_key( $section );
+	if( isset( $prefs[ $key ] ) )
+		$results = unserialize( $prefs[ $key ] );
+	else
+		$results = array();
+
+	return $results;
+	}
+
+function _sed_sf_xml_serve_cfnames( $event , $step )
+	{
+	global $prefs;
+
+	while (@ob_end_clean());
+	ob_start();
+	header( "Content-Type: text/xml" );
+
+	$section = gps( 'section' );
+
+	$cf_names = _sed_sf_get_cfnames( $section );
+	$r = '';
+	for( $x=1 ; $x <= 10; $x++)
+		{
+		$label = @$cf_names[ $x ];
+		if( empty($label) )
+			{
+			#
+			#	If no section-level label defined then use the default label for
+			# this field.
+			#
+			$def_label = 'custom_'.$x.'_set';
+			$label = $prefs[ $def_label ];
+			}
+		$r .= $label;
+		if ($x < 10)
+			$r .= ' | ';
+		}
+
+	echo $r;
+
+	exit;
+	}
+
+function _sed_sf_handle_article( $event , $step )
+	{
+	#
+	#	Makes sure all the custom fields are always present on the write-tab page.
+	#	Javascript running on the page will take care of hiding un-used fields
+	# and renaming used fields.
+	#
+	global $prefs;
+
+	for( $x = 1; $x < 11; $x++ )
+		{
+		$item = 'custom_' . $x . '_set';
+		$prefs[ $item ] = $x;
+		}
+
+	#
+	#	Insert our javascript handler for section changes...
+	#
+	ob_start( '_sed_sf_inject_js' );
+	}
+
+
+function _sed_sf_inject_js( $page )
+	{
+	#
+	#	This output buffer processing routine injects our javascript into the
+	# write tab head area.
+	#
+	$sed_sf_jscript = <<<end_js
+
+	var _sed_sf_section_select = null;
+	//var _sed_sf_cf_div         = null;
+	var _sed_sf_last_req       = "";
+	var _sed_sf_xml_manager    = false;
+	if( window.XMLHttpRequest )
+		{
+		_sed_sf_xml_manager = new XMLHttpRequest();
+		}
+
+function _sed_sf_add_load_event(func)
+	{
+	var oldonload = window.onload;
+	if (typeof window.onload != 'function')
+		{
+		window.onload = func;
+		}
+	else
+		{
+		window.onload = function()
+			{
+			oldonload();
+			func();
+			}
+		}
+	}
+
+_sed_sf_add_load_event( function(){_sed_sf_js_init();} );
+function _sed_sf_js_init()
+	{
+	if (!document.getElementById)
+		{
+		return false;
+		}
+	_sed_sf_section_select = document.getElementById('section');
+	//_sed_sf_cf_div         = document.getElementById('sed_sf_custom_fields');
+	_sed_sf_on_section_change();
+	}
+
+function _sed_sf_make_xml_req(req,req_receiver)
+	{
+	if( !_sed_sf_xml_manager || (req_receiver == null) )
+		return false;
+
+	if( (_sed_sf_last_req != req) && (req != '') )
+		{
+		if( _sed_sf_xml_manager && _sed_sf_xml_manager.readyState < 4 )
+			{
+			_sed_sf_xml_manager.abort();
+			}
+		if( window.ActiveXObject )
+			{
+			_sed_sf_xml_manager = new ActiveXObject("Microsoft.XMLHTTP");
+			}
+
+		_sed_sf_xml_manager.onreadystatechange = req_receiver;
+		_sed_sf_xml_manager.open("GET", req);
+		_sed_sf_xml_manager.send(null);
+		_sed_sf_last_req = req;
+		}
+	}
+
+function _sed_sf_request_section_custom_field_names( section )
+	{
+	var req = "?event=sed_sf&section=" + section;
+	_sed_sf_make_xml_req( req , _sed_sf_field_name_result_handler );
+	}
+
+function _sed_sf_field_name_result_handler()
+	{
+	if (_sed_sf_xml_manager.readyState == 4)
+		{
+		var results = _sed_sf_xml_manager.responseText;
+
+		var cf_names = results.split( "|" );
+
+		for( x = 1; x <= 10 ; x++ )
+			{
+			var text  = cf_names[ x-1 ];
+			var label = document.getElementById('custom-' + x + '-label' );
+			var para  = document.getElementById('custom-' + x + '-para' );
+
+			text = _sed_sf_trim( text );
+
+			if( text.length > 0 )
+				{
+				label.innerHTML = text;
+				//para.style.visibility = ""
+				para.style.display=""
+				}
+			else
+				//para.style.visibility = "hidden"
+				para.style.display="none"
+			}
+		}
+	}
+function _sed_sf_trim(term)
+	{
+	var len = term.length;
+	var lenm1 = len - 1;
+
+	while (term.substring(0,1) == ' ')
+		{
+		term = term.substring(1, term.length);
+		}
+	while (term.substring(term.length-1, term.length) == ' ')
+		{
+		term = term.substring(0,term.length-1);
+		}
+	return term;
+	}
+function _sed_sf_on_section_change()
+	{
+	//	Every time the section is changed, request the names of cfs for that section...
+	var section = _sed_sf_section_select.value;
+	_sed_sf_request_section_custom_field_names( section );
+	}
+
+end_js;
+
+	#
+	#	Inject javascript
+	#
+	$f = '<script type="text/javascript" src="jquery.js"></script>';
+	$r = '<script type="text/javascript">' . $sed_sf_jscript . '</script>';
+	$page = str_replace( $f , $f.n.$r.n , $page );
+
+	#
+	#	Inject section-change event handler
+	#
+	$f = '</a>]</span><br /><select id="section" ';
+	$r = 'onchange="_sed_sf_on_section_change()" ';
+	$page = str_replace( $f , $f.$r , $page );
+
+	#
+	#	Inject markup into custom field controls so the javascript can access
+	# them easily...
+	#
+	for( $x = 1 ; $x <= 10 ; $x++ )
+		{
+		$f = '<p><label for="custom-' . $x .  '">';
+		$r = '<p id="custom-' . $x . '-para"><label for="custom-' . $x .  '" id="custom-'. $x . '-label">';
+		$page = str_replace( $f , $r , $page );
+		}
+
+	return $page;
 	}
 
 

@@ -70,9 +70,9 @@ labels will appear.
 
 if( @txpinterface === 'admin' )
 	{
-	register_callback( '_sed_sf_handle_article'    , 'article' , '' , 1 );
-	register_callback( '_sed_sf_insert_cfnames'    , 'section' , '' , 1 );
-	register_callback( '_sed_sf_xml_serve_cfnames' , 'sed_sf' );
+	register_callback( '_sed_sf_handle_article' , 'article' , '' , 1 );
+	register_callback( '_sed_sf_insert_cfnames' , 'section' , '' , 1 );
+	register_callback( '_sed_sf_xml_server'     , 'sed_sf' );
 	}
 
 
@@ -191,13 +191,9 @@ function _sed_sf_xml_serve_cfnames( $event , $step )
 	{
 	global $prefs;
 
-	while (@ob_end_clean());
-	ob_start();
-	header( "Content-Type: text/xml" );
-
 	$section = gps( 'section' );
-
 	$cf_names = _sed_sf_get_cfnames( $section );
+
 	$r = '';
 	for( $x=1 ; $x <= 10; $x++)
 		{
@@ -215,9 +211,25 @@ function _sed_sf_xml_serve_cfnames( $event , $step )
 		if ($x < 10)
 			$r .= ' | ';
 		}
+	return $r;
+	}
+function _sed_sf_xml_server( $event , $step )
+	{
+	while (@ob_end_clean());
+	header('Content-Type: text/xml; charset=utf-8');
+	header('Cache-Control: private');
+
+	switch( $step )	# step selects among possible content types...
+		{
+		case 'get_cfnames' :
+			$r =  _sed_sf_xml_serve_cfnames( $event , $step );
+			break;
+		default:
+			$r = '';
+			break;
+		}
 
 	echo $r;
-
 	exit;
 	}
 
@@ -283,6 +295,10 @@ function _sed_sf_js_init()
 		}
 	_sed_sf_section_select = document.getElementById('section');
 	_sed_sf_on_section_change();
+
+	// Do what Rob Sables' rss_admin_show_adv_opts does...
+	// TODO: Parametirise this, show/hide on a per-section basis!
+	toggleDisplay('advanced');
 	}
 function _sed_sf_make_xml_req(req,req_receiver)
 	{
@@ -308,7 +324,7 @@ function _sed_sf_make_xml_req(req,req_receiver)
 	}
 function _sed_sf_request_section_custom_field_names( section )
 	{
-	var req = "?event=sed_sf&section=" + section;
+	var req = "?event=sed_sf&step=get_cfnames&section=" + section;
 	_sed_sf_make_xml_req( req , _sed_sf_field_name_result_handler );
 	}
 function _sed_sf_field_name_result_handler()
@@ -330,11 +346,9 @@ function _sed_sf_field_name_result_handler()
 			if( text.length > 0 )
 				{
 				label.innerHTML = text;
-				//para.style.visibility = ""
 				para.style.display=""
 				}
 			else
-				//para.style.visibility = "hidden"
 				para.style.display="none"
 			}
 		}

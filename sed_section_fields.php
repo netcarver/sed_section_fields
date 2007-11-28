@@ -1,6 +1,8 @@
 <?php
 
-$plugin['revision'] = '$LastChangedRevision: 5 $';
+
+
+$plugin['revision'] = '$LastChangedRevision$';
 
 $revision = @$plugin['revision'];
 if( !empty( $revision ) )
@@ -13,10 +15,10 @@ if( !empty( $revision ) )
 
 $plugin['name'] = 'sed_section_fields';
 $plugin['version'] = '0.1' . $revision;
-$plugin['author'] = 'netcarver';
+$plugin['author'] = 'Stephen Dickinson';
 $plugin['author_uri'] = 'http://txp-plugins.netcarving.com';
 $plugin['description'] = 'Provides per-section custom field labels';
-$plugin['type'] = 1;
+$plugin['type'] = '1';
 
 @include_once('../zem_tpl.php');
 
@@ -24,27 +26,27 @@ if (0) {
 ?>
 <!-- CSS SECTION
 # --- BEGIN PLUGIN CSS ---
-<style type="text/css">
-div#sed_help td { vertical-align:top; }
-div#sed_help code { font-weight:bold; font: 105%/130% "Courier New", courier, monospace; background-color: #FFFFCC;}
-div#sed_help code.sed_code_tag { font-weight:normal; border:1px dotted #999; background-color: #f0e68c; display:block; margin:10px 10px 20px; padding:10px; }
-div#sed_help a:link, div#sed_help a:visited { color: blue; text-decoration: none; border-bottom: 1px solid blue; padding-bottom:1px;}
-div#sed_help a:hover, div#sed_help a:active { color: blue; text-decoration: none; border-bottom: 2px solid blue; padding-bottom:1px;}
-div#sed_help h1 { color: #369; font: 20px Georgia, sans-serif; margin: 0; text-align: center; }
-div#sed_help h2 { border-bottom: 1px solid black; padding:10px 0 0; color: #369; font: 17px Georgia, sans-serif; }
-div#sed_help h3 { color: #693; font: bold 12px Arial, sans-serif; letter-spacing: 1px; margin: 10px 0 0;text-transform: uppercase;}
-</style>
+	<style type="text/css">
+	div#sed_sf_help td { vertical-align:top; }
+	div#sed_sf_help code { font-weight:bold; font: 105%/130% "Courier New", courier, monospace; background-color: #FFFFCC;}
+	div#sed_sf_help code.sed_code_tag { font-weight:normal; border:1px dotted #999; background-color: #f0e68c; display:block; margin:10px 10px 20px; padding:10px; }
+	div#sed_sf_help a:link, div#sed_sf_help a:visited { color: blue; text-decoration: none; border-bottom: 1px solid blue; padding-bottom:1px;}
+	div#sed_sf_help a:hover, div#sed_sf_help a:active { color: blue; text-decoration: none; border-bottom: 2px solid blue; padding-bottom:1px;}
+	div#sed_sf_help h1 { color: #369; font: 20px Georgia, sans-serif; margin: 0; text-align: center; }
+	div#sed_sf_help h2 { border-bottom: 1px solid black; padding:10px 0 0; color: #369; font: 17px Georgia, sans-serif; }
+	div#sed_sf_help h3 { color: #693; font: bold 12px Arial, sans-serif; letter-spacing: 1px; margin: 10px 0 0;text-transform: uppercase;}
+	div#sed_sf_help ul ul { font-size:85%; }
+	div#sed_sf_help h3 { color: #693; font: bold 12px Arial, sans-serif; letter-spacing: 1px; margin: 10px 0 0;text-transform: uppercase;}
+	</style>
 # --- END PLUGIN CSS ---
 -->
 <!-- HELP SECTION
 # --- BEGIN PLUGIN HELP ---
-<div id="sed_help">
+<div id="sed_sf_help">
 
-h1(#top). sed_section_fields
+h1(#top). SED Section Fields Help.
 
 Introduces section-specific named overrides for custom fields.
-
-|_. Copyright 2007 Stephen Dickinson. |
 
 h2(#changelog). Change Log
 
@@ -57,7 +59,7 @@ in that section.
 * If you change the section of an article and then edit it, the new sections
 labels will appear.
 
-
+ <span style="float:right"><a href="#top" title="Jump to the top">top</a></span>
 
 </div>
 # --- END PLUGIN HELP ---
@@ -66,7 +68,7 @@ labels will appear.
 }
 # --- BEGIN PLUGIN CODE ---
 
-if( 'admin' == @txpinterface )
+if( @txpinterface === 'admin' )
 	{
 	register_callback( '_sed_sf_handle_article'    , 'article' , '' , 1 );
 	register_callback( '_sed_sf_insert_cfnames'    , 'section' , '' , 1 );
@@ -248,9 +250,7 @@ function _sed_sf_inject_js( $page )
 	# write tab head area.
 	#
 	$sed_sf_jscript = <<<end_js
-
 	var _sed_sf_section_select = null;
-	//var _sed_sf_cf_div         = null;
 	var _sed_sf_last_req       = "";
 	var _sed_sf_xml_manager    = false;
 	if( window.XMLHttpRequest )
@@ -274,7 +274,6 @@ function _sed_sf_add_load_event(func)
 			}
 		}
 	}
-
 _sed_sf_add_load_event( function(){_sed_sf_js_init();} );
 function _sed_sf_js_init()
 	{
@@ -283,10 +282,8 @@ function _sed_sf_js_init()
 		return false;
 		}
 	_sed_sf_section_select = document.getElementById('section');
-	//_sed_sf_cf_div         = document.getElementById('sed_sf_custom_fields');
 	_sed_sf_on_section_change();
 	}
-
 function _sed_sf_make_xml_req(req,req_receiver)
 	{
 	if( !_sed_sf_xml_manager || (req_receiver == null) )
@@ -309,13 +306,11 @@ function _sed_sf_make_xml_req(req,req_receiver)
 		_sed_sf_last_req = req;
 		}
 	}
-
 function _sed_sf_request_section_custom_field_names( section )
 	{
 	var req = "?event=sed_sf&section=" + section;
 	_sed_sf_make_xml_req( req , _sed_sf_field_name_result_handler );
 	}
-
 function _sed_sf_field_name_result_handler()
 	{
 	if (_sed_sf_xml_manager.readyState == 4)
@@ -361,11 +356,9 @@ function _sed_sf_trim(term)
 	}
 function _sed_sf_on_section_change()
 	{
-	//	Every time the section is changed, request the names of cfs for that section...
 	var section = _sed_sf_section_select.value;
 	_sed_sf_request_section_custom_field_names( section );
 	}
-
 end_js;
 
 	#
@@ -396,6 +389,6 @@ end_js;
 	return $page;
 	}
 
+# --- END PLUGIN CODE ---
 
-	# --- END PLUGIN CODE ---
 ?>

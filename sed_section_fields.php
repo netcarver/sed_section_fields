@@ -90,7 +90,7 @@ if( @txpinterface === 'public' )
 		assert_article();
 
 		$section = $thisarticle['section'];
-		$sfnames = _sed_sf_get_cfnames( $section );
+		$sfnames = _sed_sf_get_cfviz( $section );
 		$gfnames = getCustomFields();
 
 		foreach( $gfnames as $x => $label )
@@ -138,10 +138,13 @@ function _sed_sf_insert_cfnames_into_sections( $page )
 	#	Inserts the name text inputs into each sections' edit controls
 	# current implementation uses output buffer...
 	#
-	global $DB;
+	global $DB , $prefs;
 
 	if( !isset( $DB ) )
 		$DB = new db;
+
+	if( !isset( $prefs ) )
+		$prefs = get_prefs();
 
 	$rows = safe_rows_start( '*' , 'txp_section' , "1=1" );
 	$c = @mysql_num_rows($rows);
@@ -152,19 +155,31 @@ function _sed_sf_insert_cfnames_into_sections( $page )
 			$name  = $row['name'];
 			$title = $row['title'];
 
-			$cf_names = _sed_sf_get_cfnames( $name );
+			$cf_names = _sed_sf_get_cfviz( $name );
 
 			$f = '<input type="text" name="name" value="' . $name . '" size="20" class="edit" tabindex="1" /></td></tr>'. n.n . '<tr><td class="noline" style="text-align: right; vertical-align: middle;">' . gTxt('section_longtitle') . ': </td><td class="noline"><input type="text" name="title" value="' . $title . '" size="20" class="edit" tabindex="1" /></td></tr>';
 
-			$r = '';
+			$r = n.n.'<tr><td colspan="2">Write Tab Fields...</td></tr>'.n;
 			for( $x = 1; $x <= 10; $x++ )
 				{
 				$value = $cf_names[ $x ];
 				$field_name = 'cf_' . $x . '_set';
-				$r .= '<tr><td class="noline" style="text-align: right; vertical-align: middle;">Label for custom field #' . $x . ': </td><td class="noline">';
-				$r .= '<input name="' . $field_name . '" value="'.$value.'" size="20" class="edit" type="text" >';
-				$r .= '</td></tr>'.n;
+				$global_label = $prefs [ 'custom_' . $x . '_set' ];
+				if( !empty( $global_label ) )
+					{
+					#	Only bother showing the show/hide radio buttons if the global field label exists.
+					$r .= '<tr><td class="noline" style="text-align: right; vertical-align: middle;">Hide "' . $global_label . '" (cf#'. $x .') on write tab? </td><td class="noline">';
+					$r .= yesnoradio( $name.'_cf_'.$x.'_visible' , $value , '' , $field_name );
+					$r .= '</td></tr>'.n;
+					}
 				}
+
+			# TODO: Insert row to control visibility of this section in the write-tab section selector
+			#$r .= '<tr><td class="noline" style="text-align: right; vertical-align: middle;">Hide this section on write tab? </td><td class="noline">';
+			#$r .= yesnoradio( 'hide_'.$name.'_from_list' , '0' );
+			#$r .= '</td></tr>'.n;
+
+			$r .= n.'<tr><td colspan="2"></td></tr>'.n.n;
 			$page = str_replace( $f , $f.$r , $page );
 			}
 		}
@@ -203,10 +218,12 @@ function _sed_sf_update_cfnames()
 	$data = array();
 	for( $x = 1; $x <= 10; $x++ )
 		{
-		$field_name = 'cf_' . $x . '_set';
+		$field_name = $section . '_cf_' . $x . '_visible';
 		$value = ps( $field_name );
-		if( isset( $value ) )
+		if( !empty( $value ) )
 			$data[$x] = $value;
+		else
+			$data[$x] = '0';
 		}
 
 	#
@@ -219,7 +236,7 @@ function _sed_sf_update_cfnames()
 	$prefs[ $key ] = $value;
 	}
 
-function _sed_sf_get_cfnames( $section )
+function _sed_sf_get_cfviz( $section )
 	{
 	#
 	#	Given the name of a section, will grab the labels for the custom fields
@@ -236,26 +253,17 @@ function _sed_sf_get_cfnames( $section )
 	return $results;
 	}
 
-function _sed_sf_xml_serve_cfnames( $event , $step )
+function _sed_sf_xml_serve_cfvisibility( $event , $step )
 	{
 	global $prefs;
 
 	$section = gps( 'section' );
-	$cf_names = _sed_sf_get_cfnames( $section );
+	$cf_names = _sed_sf_get_cfviz( $section );
 
 	$r = '';
 	for( $x=1 ; $x <= 10; $x++)
 		{
 		$label = @$cf_names[ $x ];
-		if( empty($label) )
-			{
-			#
-			#	If no section-level label defined then use the default label for
-			# this field.
-			#
-			$def_label = 'custom_'.$x.'_set';
-			$label = $prefs[ $def_label ];
-			}
 		$r .= $label;
 		if ($x < 10)
 			$r .= ' | ';
@@ -270,8 +278,8 @@ function _sed_sf_xml_server( $event , $step )
 
 	switch( $step )	# step selects among possible content types...
 		{
-		case 'get_cfnames' :
-			$r =  _sed_sf_xml_serve_cfnames( $event , $step );
+		case 'get_cfvisibility' :
+			$r =  _sed_sf_xml_serve_cfvisibility( $event , $step );
 			break;
 		default:
 			$r = '';
@@ -289,17 +297,13 @@ function _sed_sf_handle_article_pre( $event , $step )
 	#	Javascript running on the page will take care of hiding un-used fields
 	# and renaming used fields.
 	#
-	global $prefs;
+	#global $prefs;
+	#for( $x = 1; $x < 11; $x++ )
+	#	{
+	#	$item = 'custom_' . $x . '_set';
+	#	$prefs[ $item ] = $x;
+	#	}
 
-	for( $x = 1; $x < 11; $x++ )
-		{
-		$item = 'custom_' . $x . '_set';
-		$prefs[ $item ] = $x;
-		}
-
-	#
-	#	Insert our javascript handler for section changes...
-	#
 	ob_start( '_sed_sf_inject_into_write' );
 	}
 function _sed_sf_handle_article_post( $event , $step )

@@ -1,7 +1,5 @@
 <?php
 
-
-
 $plugin['revision'] = '$LastChangedRevision$';
 
 $revision = @$plugin['revision'];
@@ -10,7 +8,7 @@ if( !empty( $revision ) )
 	$parts = explode( ' ' , trim( $revision , '$' ) );
 	$revision = $parts[1];
 	if( !empty( $revision ) )
-		$revision = ' (r' . $revision . ')';
+		$revision = '.' . $revision;
 	}
 
 $plugin['name'] = 'sed_section_fields';
@@ -68,13 +66,64 @@ labels will appear.
 }
 # --- BEGIN PLUGIN CODE ---
 
+/*
+if( @txpinterface === 'public' )
+	{
+	function sed_sf_enable( $atts )
+		{
+		# NOTE: First attempt at making this plugin do something useful on the public side.
+		#
+		#	This relies upon all custom field names being defined in the
+		# admin > preferences > advanced tab -- otherwise, just a subset of the
+		# custom fields can be renamed on the public side.
+		#
+		#	To overcome this limitation I'll have to force all fields to be named
+		# in the preferences page but then make the per-section interface
+		# tri-state. Something like this...
+		#
+		# [x] Hide [ ] Global  or Custom : [                    ]
+		#
+		#	Then the server routine will need to be updated for this as will
+		# the Jscript re-labelling routine.
+		#
+		global $thisarticle, $prefs;
+		assert_article();
+
+		$section = $thisarticle['section'];
+		$sfnames = _sed_sf_get_cfnames( $section );
+		$gfnames = getCustomFields();
+
+		foreach( $gfnames as $x => $label )
+			{
+			$new_label = @$sfnames[ $x ];
+			if( !empty( $new_label ) )
+				$thisarticle[ strtolower($new_label) ] = $thisarticle[ $label ];
+			}
+
+		echo br , dmp( $thisarticle );
+
+		}
+	}
+*/
+
+
+
 if( @txpinterface === 'admin' )
 	{
-	register_callback( '_sed_sf_handle_article' , 'article' , '' , 1 );
-	register_callback( '_sed_sf_insert_cfnames' , 'section' , '' , 1 );
-	register_callback( '_sed_sf_xml_server'     , 'sed_sf' );
+	register_callback( '_sed_sf_handle_article_pre' ,  'article' , '' , 1 );
+	register_callback( '_sed_sf_handle_article_post' , 'article' );
+	register_callback( '_sed_sf_insert_cfnames' ,      'section' , '' , 1 );
+	register_callback( '_sed_sf_xml_server'     ,      'sed_sf' );
 	}
 
+switch(gps('sed_resources'))
+	{
+	case 'sed_sf_js':
+		_sed_sf_js();
+		break;
+	default:
+		break;
+	}
 
 function _sed_sf_make_section_key( $section )
 	{
@@ -233,7 +282,7 @@ function _sed_sf_xml_server( $event , $step )
 	exit;
 	}
 
-function _sed_sf_handle_article( $event , $step )
+function _sed_sf_handle_article_pre( $event , $step )
 	{
 	#
 	#	Makes sure all the custom fields are always present on the write-tab page.
@@ -251,137 +300,21 @@ function _sed_sf_handle_article( $event , $step )
 	#
 	#	Insert our javascript handler for section changes...
 	#
-	ob_start( '_sed_sf_inject_js' );
+	ob_start( '_sed_sf_inject_into_write' );
 	}
-
-
-function _sed_sf_inject_js( $page )
+function _sed_sf_handle_article_post( $event , $step )
 	{
-	#
-	#	This output buffer processing routine injects our javascript into the
-	# write tab head area.
-	#
-	$sed_sf_jscript = <<<end_js
-	var _sed_sf_section_select = null;
-	var _sed_sf_last_req       = "";
-	var _sed_sf_xml_manager    = false;
-	if( window.XMLHttpRequest )
-		{
-		_sed_sf_xml_manager = new XMLHttpRequest();
-		}
-
-function _sed_sf_add_load_event(func)
-	{
-	var oldonload = window.onload;
-	if (typeof window.onload != 'function')
-		{
-		window.onload = func;
-		}
-	else
-		{
-		window.onload = function()
-			{
-			oldonload();
-			func();
-			}
-		}
-	}
-_sed_sf_add_load_event( function(){_sed_sf_js_init();} );
-function _sed_sf_js_init()
-	{
-	if (!document.getElementById)
-		{
-		return false;
-		}
-	_sed_sf_section_select = document.getElementById('section');
-	_sed_sf_on_section_change();
-
-	// Do what Rob Sables' rss_admin_show_adv_opts does...
-	// TODO: Parametirise this, show/hide on a per-section basis!
-	toggleDisplay('advanced');
-	}
-function _sed_sf_make_xml_req(req,req_receiver)
-	{
-	if( !_sed_sf_xml_manager || (req_receiver == null) )
-		return false;
-
-	if( (_sed_sf_last_req != req) && (req != '') )
-		{
-		if( _sed_sf_xml_manager && _sed_sf_xml_manager.readyState < 4 )
-			{
-			_sed_sf_xml_manager.abort();
-			}
-		if( window.ActiveXObject )
-			{
-			_sed_sf_xml_manager = new ActiveXObject("Microsoft.XMLHTTP");
-			}
-
-		_sed_sf_xml_manager.onreadystatechange = req_receiver;
-		_sed_sf_xml_manager.open("GET", req);
-		_sed_sf_xml_manager.send(null);
-		_sed_sf_last_req = req;
-		}
-	}
-function _sed_sf_request_section_custom_field_names( section )
-	{
-	var req = "?event=sed_sf&step=get_cfnames&section=" + section;
-	_sed_sf_make_xml_req( req , _sed_sf_field_name_result_handler );
-	}
-function _sed_sf_field_name_result_handler()
-	{
-	if (_sed_sf_xml_manager.readyState == 4)
-		{
-		var results = _sed_sf_xml_manager.responseText;
-
-		var cf_names = results.split( "|" );
-
-		for( x = 1; x <= 10 ; x++ )
-			{
-			var text  = cf_names[ x-1 ];
-			var label = document.getElementById('custom-' + x + '-label' );
-			var para  = document.getElementById('custom-' + x + '-para' );
-
-			text = _sed_sf_trim( text );
-
-			if( text.length > 0 )
-				{
-				label.innerHTML = text;
-				para.style.display=""
-				}
-			else
-				para.style.display="none"
-			}
-		}
-	}
-function _sed_sf_trim(term)
-	{
-	var len = term.length;
-	var lenm1 = len - 1;
-
-	while (term.substring(0,1) == ' ')
-		{
-		term = term.substring(1, term.length);
-		}
-	while (term.substring(term.length-1, term.length) == ' ')
-		{
-		term = term.substring(0,term.length-1);
-		}
-	return term;
-	}
-function _sed_sf_on_section_change()
-	{
-	var section = _sed_sf_section_select.value;
-	_sed_sf_request_section_custom_field_names( section );
-	}
-end_js;
+	echo "<script src='" .hu."?sed_resources=sed_sf_js' type='text/javascript'></script>\n";
 
 	#
-	#	Inject javascript
+	# QUESTION: Is it possible to grab the output buffer and insert the elements
+	# we need right here -- without using an output buffer handler?
 	#
-	$f = '<script type="text/javascript" src="jquery.js"></script>';
-	$r = '<script type="text/javascript">' . $sed_sf_jscript . '</script>';
-	$page = str_replace( $f , $f.n.$r.n , $page );
+	}
 
+
+function _sed_sf_inject_into_write( $page )
+	{
 	#
 	#	Inject section-change event handler
 	#
@@ -401,6 +334,27 @@ end_js;
 		}
 
 	return $page;
+	}
+
+
+function _sed_sf_js()
+	{
+	$debug = true;
+	while( @ob_end_clean() );
+	header( "Content-Type: text/javascript; charset=utf-8" );
+	header( "Expires: ".date("r", time()+3600) );
+	header( "Cache-Control: public" );
+	if( $debug )
+		{
+		readfile( dirname(__FILE__) . '/sed_sf.js' );
+		}
+	else
+		{
+		echo <<<js
+		HELLO!
+js;
+		}
+	exit();
 	}
 
 # --- END PLUGIN CODE ---

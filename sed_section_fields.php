@@ -20,93 +20,7 @@ $plugin['type'] = '1';
 
 @include_once('../zem_tpl.php');
 
-if (0) {
-?>
-<!-- CSS SECTION
-# --- BEGIN PLUGIN CSS ---
-	<style type="text/css">
-	div#sed_sf_help td { vertical-align:top; }
-	div#sed_sf_help code { font-weight:bold; font: 105%/130% "Courier New", courier, monospace; background-color: #FFFFCC;}
-	div#sed_sf_help code.sed_code_tag { font-weight:normal; border:1px dotted #999; background-color: #f0e68c; display:block; margin:10px 10px 20px; padding:10px; }
-	div#sed_sf_help a:link, div#sed_sf_help a:visited { color: blue; text-decoration: none; border-bottom: 1px solid blue; padding-bottom:1px;}
-	div#sed_sf_help a:hover, div#sed_sf_help a:active { color: blue; text-decoration: none; border-bottom: 2px solid blue; padding-bottom:1px;}
-	div#sed_sf_help h1 { color: #369; font: 20px Georgia, sans-serif; margin: 0; text-align: center; }
-	div#sed_sf_help h2 { border-bottom: 1px solid black; padding:10px 0 0; color: #369; font: 17px Georgia, sans-serif; }
-	div#sed_sf_help h3 { color: #693; font: bold 12px Arial, sans-serif; letter-spacing: 1px; margin: 10px 0 0;text-transform: uppercase;}
-	div#sed_sf_help ul ul { font-size:85%; }
-	div#sed_sf_help h3 { color: #693; font: bold 12px Arial, sans-serif; letter-spacing: 1px; margin: 10px 0 0;text-transform: uppercase;}
-	</style>
-# --- END PLUGIN CSS ---
--->
-<!-- HELP SECTION
-# --- BEGIN PLUGIN HELP ---
-<div id="sed_sf_help">
-
-h1(#top). SED Section Fields Help.
-
-Introduces section-specific named overrides for custom fields.
-
-h2(#changelog). Change Log
-
-v0.1
-
-* Use the presentations > section tab to setup custom field names for any article
-in that section.
-* When you write or edit an article, your per-section custom fields will appear
--- possibly overriding the site-wide labels.
-* If you change the section of an article and then edit it, the new sections
-labels will appear.
-
- <span style="float:right"><a href="#top" title="Jump to the top">top</a></span>
-
-</div>
-# --- END PLUGIN HELP ---
--->
-<?php
-}
 # --- BEGIN PLUGIN CODE ---
-
-/*
-if( @txpinterface === 'public' )
-	{
-	function sed_sf_enable( $atts )
-		{
-		# NOTE: First attempt at making this plugin do something useful on the public side.
-		#
-		#	This relies upon all custom field names being defined in the
-		# admin > preferences > advanced tab -- otherwise, just a subset of the
-		# custom fields can be renamed on the public side.
-		#
-		#	To overcome this limitation I'll have to force all fields to be named
-		# in the preferences page but then make the per-section interface
-		# tri-state. Something like this...
-		#
-		# [x] Hide [ ] Global  or Custom : [                    ]
-		#
-		#	Then the server routine will need to be updated for this as will
-		# the Jscript re-labelling routine.
-		#
-		global $thisarticle, $prefs;
-		assert_article();
-
-		$section = $thisarticle['section'];
-		$sfnames = _sed_sf_get_cfviz( $section );
-		$gfnames = getCustomFields();
-
-		foreach( $gfnames as $x => $label )
-			{
-			$new_label = @$sfnames[ $x ];
-			if( !empty( $new_label ) )
-				$thisarticle[ strtolower($new_label) ] = $thisarticle[ $label ];
-			}
-
-		echo br , dmp( $thisarticle );
-
-		}
-	}
-*/
-
-
 
 if( @txpinterface === 'admin' )
 	{
@@ -292,23 +206,11 @@ function _sed_sf_xml_server( $event , $step )
 
 function _sed_sf_handle_article_pre( $event , $step )
 	{
-	#
-	#	Makes sure all the custom fields are always present on the write-tab page.
-	#	Javascript running on the page will take care of hiding un-used fields
-	# and renaming used fields.
-	#
-	#global $prefs;
-	#for( $x = 1; $x < 11; $x++ )
-	#	{
-	#	$item = 'custom_' . $x . '_set';
-	#	$prefs[ $item ] = $x;
-	#	}
-
 	ob_start( '_sed_sf_inject_into_write' );
 	}
 function _sed_sf_handle_article_post( $event , $step )
 	{
-	echo "<script src='" .hu."?sed_resources=sed_sf_js' type='text/javascript'></script>\n";
+	echo n."<script src='" .hu."?sed_resources=sed_sf_js' type='text/javascript'></script>".n;
 
 	#
 	# QUESTION: Is it possible to grab the output buffer and insert the elements
@@ -354,13 +256,51 @@ function _sed_sf_js()
 		}
 	else
 		{
-		echo <<<js
-		HELLO!
-js;
+#		echo <<<js
+#HELLO!
+#js;
 		}
 	exit();
 	}
 
 # --- END PLUGIN CODE ---
 
+/*
+# --- BEGIN PLUGIN CSS ---
+	<style type="text/css">
+	div#sed_sf_help td { vertical-align:top; }
+	div#sed_sf_help code { font-weight:bold; font: 105%/130% "Courier New", courier, monospace; background-color: #FFFFCC;}
+	div#sed_sf_help code.sed_code_tag { font-weight:normal; border:1px dotted #999; background-color: #f0e68c; display:block; margin:10px 10px 20px; padding:10px; }
+	div#sed_sf_help a:link, div#sed_sf_help a:visited { color: blue; text-decoration: none; border-bottom: 1px solid blue; padding-bottom:1px;}
+	div#sed_sf_help a:hover, div#sed_sf_help a:active { color: blue; text-decoration: none; border-bottom: 2px solid blue; padding-bottom:1px;}
+	div#sed_sf_help h1 { color: #369; font: 20px Georgia, sans-serif; margin: 0; text-align: center; }
+	div#sed_sf_help h2 { border-bottom: 1px solid black; padding:10px 0 0; color: #369; font: 17px Georgia, sans-serif; }
+	div#sed_sf_help h3 { color: #693; font: bold 12px Arial, sans-serif; letter-spacing: 1px; margin: 10px 0 0;text-transform: uppercase;}
+	div#sed_sf_help ul ul { font-size:85%; }
+	div#sed_sf_help h3 { color: #693; font: bold 12px Arial, sans-serif; letter-spacing: 1px; margin: 10px 0 0;text-transform: uppercase;}
+	</style>
+# --- END PLUGIN CSS ---
+# --- BEGIN PLUGIN HELP ---
+<div id="sed_sf_help">
+
+h1(#top). SED Section Fields Help.
+
+Introduces section-specific named overrides for custom fields.
+
+h2(#changelog). Change Log
+
+v0.1
+
+* Use the presentations > section tab to choose which custom fields to hide for any
+article in that section.
+* When you write or edit an article, your per-section custom fields preferences will
+appear.
+* If you change the section of an article and then edit it, the new section's
+fields will appear (or disappear) as appropriate to the section.
+
+ <span style="float:right"><a href="#top" title="Jump to the top">top</a></span>
+
+</div>
+# --- END PLUGIN HELP ---
+*/
 ?>

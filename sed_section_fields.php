@@ -68,7 +68,7 @@ function _sed_sf_enumerate_strings()
 	{
 	global $_sed_sf_l18n;
 	$r = array	(
-				'owner'		=> $plugin['name'],
+				'owner'		=> 'sed_section_fields',
 				'prefix'	=> SED_SF_PREFIX,
 				'lang'		=> 'en-gb',
 				'event'		=> 'public',

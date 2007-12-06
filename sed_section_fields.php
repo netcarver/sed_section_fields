@@ -71,7 +71,7 @@ function _sed_sf_enumerate_strings()
 				'owner'		=> 'sed_section_fields',
 				'prefix'	=> SED_SF_PREFIX,
 				'lang'		=> 'en-gb',
-				'event'		=> 'public',
+				'event'		=> 'admin',
 				'strings'	=> $_sed_sf_l18n,
 				);
 	return $r;

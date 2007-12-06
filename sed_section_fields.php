@@ -15,12 +15,68 @@ $plugin['name'] = 'sed_section_fields';
 $plugin['version'] = '0.1' . $revision;
 $plugin['author'] = 'Stephen Dickinson';
 $plugin['author_uri'] = 'http://txp-plugins.netcarving.com';
-$plugin['description'] = 'Provides per-section custom field labels';
+$plugin['description'] = 'Provides admin interface field customisation on a per-section basis.';
 $plugin['type'] = '1';
 
 @include_once('../zem_tpl.php');
 
 # --- BEGIN PLUGIN CODE ---
+
+#
+#	Define a unique prefix for our strings (make sure there is no '-' in it!)
+#
+if( !defined( 'SED_SF_PREFIX' ) )
+	define( 'SED_SF_PREFIX' , 'sed_sf' );
+
+#===============================================================================
+#	Strings for internationalisation...
+#===============================================================================
+global $_sed_sf_l18n;
+$_sed_sf_l18n = array(
+	'write_tab_heading' 	=> 'Write Tab Fields...',
+	'hide_cf' 				=> 'Hide "{global_label}" (cf#{cfnum}) on write tab?',
+	);
+
+function _sed_sf_gtxt( $what , $args=array() )
+	{
+	global $textarray;
+	global $_sed_sf_l18n;
+
+	$key = SED_SF_PREFIX . '-' . $what;
+	$key = strtolower($key);
+
+	if(isset($textarray[$key]))
+		$str = $textarray[$key];
+	else
+		{
+		$key = strtolower($what);
+
+		if( isset( $_sed_sf_l18n[$key] ) )
+			$str = $_sed_sf_l18n[$key];
+		else
+			$str = $what;
+		}
+	$str = strtr( $str , $args );
+	return $str;
+	}
+
+#===============================================================================
+#	MLP Registration...
+#===============================================================================
+register_callback( '_sed_sf_enumerate_strings' , 'l10n.enumerate_strings' );
+function _sed_sf_enumerate_strings()
+	{
+	global $_sed_sf_l18n;
+	$r = array	(
+				'owner'		=> $plugin['name'],
+				'prefix'	=> SED_SF_PREFIX,
+				'lang'		=> 'en-gb',
+				'event'		=> 'public',
+				'strings'	=> $_sed_sf_l18n,
+				);
+	return $r;
+	}
+
 
 if( @txpinterface === 'admin' )
 	{
@@ -60,6 +116,8 @@ function _sed_sf_insert_cfnames_into_sections( $page )
 	if( !isset( $prefs ) )
 		$prefs = get_prefs();
 
+	$write_tab_header = _sed_sf_gtxt( 'write_tab_heading' );
+
 	$rows = safe_rows_start( '*' , 'txp_section' , "1=1" );
 	$c = @mysql_num_rows($rows);
 	if( $rows && $c > 0 )
@@ -73,16 +131,18 @@ function _sed_sf_insert_cfnames_into_sections( $page )
 
 			$f = '<input type="text" name="name" value="' . $name . '" size="20" class="edit" tabindex="1" /></td></tr>'. n.n . '<tr><td class="noline" style="text-align: right; vertical-align: middle;">' . gTxt('section_longtitle') . ': </td><td class="noline"><input type="text" name="title" value="' . $title . '" size="20" class="edit" tabindex="1" /></td></tr>';
 
-			$r = n.n.'<tr><td colspan="2">Write Tab Fields...</td></tr>'.n;
+			$r = n.n.'<tr><td colspan="2">'.$write_tab_header.'</td></tr>'.n;
 			for( $x = 1; $x <= 10; $x++ )
 				{
 				$value = $cf_names[ $x ];
 				$field_name = 'cf_' . $x . '_set';
 				$global_label = $prefs [ 'custom_' . $x . '_set' ];
+				$args  = array( '{global_label}'=>$global_label , '{cfnum}'=>$x );
+				$label = _sed_sf_gtxt( 'hide_cf', $args );
 				if( !empty( $global_label ) )
 					{
 					#	Only bother showing the show/hide radio buttons if the global field label exists.
-					$r .= '<tr><td class="noline" style="text-align: right; vertical-align: middle;">Hide "' . $global_label . '" (cf#'. $x .') on write tab? </td><td class="noline">';
+					$r .= '<tr><td class="noline" style="text-align: right; vertical-align: middle;">' . $label . '</td><td class="noline">';
 					$r .= yesnoradio( $name.'_cf_'.$x.'_visible' , $value , '' , $field_name );
 					$r .= '</td></tr>'.n;
 					}
@@ -245,7 +305,7 @@ function _sed_sf_inject_into_write( $page )
 
 function _sed_sf_js()
 	{
-	$debug = true;
+	$debug = false;
 	while( @ob_end_clean() );
 	header( "Content-Type: text/javascript; charset=utf-8" );
 	header( "Expires: ".date("r", time()+3600) );
@@ -256,9 +316,116 @@ function _sed_sf_js()
 		}
 	else
 		{
-#		echo <<<js
-#HELLO!
-#js;
+		echo <<<js
+var _sed_sf_section_select = null;
+var _sed_sf_last_req       = "";
+var _sed_sf_xml_manager    = false;
+if( window.XMLHttpRequest )
+	{
+	_sed_sf_xml_manager = new XMLHttpRequest();
+	}
+
+function _sed_sf_add_load_event(func)
+	{
+	var oldonload = window.onload;
+	if (typeof window.onload != 'function')
+		{
+		window.onload = func;
+		}
+	else
+		{
+		window.onload = function()
+			{
+			oldonload();
+			func();
+			}
+		}
+	}
+_sed_sf_add_load_event( function(){_sed_sf_js_init();} );
+function _sed_sf_js_init()
+	{
+	if (!document.getElementById)
+		{
+		return false;
+		}
+	_sed_sf_section_select = document.getElementById('section');
+	_sed_sf_on_section_change();
+
+	// Do what Rob Sables' rss_admin_show_adv_opts does...
+	// TODO: Parametirise this, show/hide on a per-section basis!
+	toggleDisplay('advanced');
+	}
+function _sed_sf_make_xml_req(req,req_receiver)
+	{
+	if( !_sed_sf_xml_manager || (req_receiver == null) )
+		return false;
+
+	if( (_sed_sf_last_req != req) && (req != '') )
+		{
+		if( _sed_sf_xml_manager && _sed_sf_xml_manager.readyState < 4 )
+			{
+			_sed_sf_xml_manager.abort();
+			}
+		if( window.ActiveXObject )
+			{
+			_sed_sf_xml_manager = new ActiveXObject("Microsoft.XMLHTTP");
+			}
+
+		_sed_sf_xml_manager.onreadystatechange = req_receiver;
+		_sed_sf_xml_manager.open("GET", req);
+		_sed_sf_xml_manager.send(null);
+		_sed_sf_last_req = req;
+		}
+	}
+function _sed_sf_request_section_custom_field_visibility( section )
+	{
+	var req = "?event=sed_sf&step=get_cfvisibility&section=" + section;
+	_sed_sf_make_xml_req( req , _sed_sf_field_vizibility_result_handler );
+	}
+function _sed_sf_field_vizibility_result_handler()
+	{
+	if (_sed_sf_xml_manager.readyState == 4)
+		{
+		var results = _sed_sf_xml_manager.responseText;
+		var cf_viz  = results.split( "|" );
+
+		for( x = 1; x <= 10 ; x++ )
+			{
+			var hide  = cf_viz[ x-1 ];
+			var para  = document.getElementById('custom-' + x + '-para' );
+
+			if( para != null )
+				{
+				hide = _sed_sf_trim( hide );
+				if( hide == '1' )
+					para.style.display="none"
+				else
+					para.style.display=""
+				}
+			}
+		}
+	}
+function _sed_sf_trim(term)
+	{
+	var len = term.length;
+	var lenm1 = len - 1;
+
+	while (term.substring(0,1) == ' ')
+		{
+		term = term.substring(1, term.length);
+		}
+	while (term.substring(term.length-1, term.length) == ' ')
+		{
+		term = term.substring(0,term.length-1);
+		}
+	return term;
+	}
+function _sed_sf_on_section_change()
+	{
+	var section = _sed_sf_section_select.value;
+	_sed_sf_request_section_custom_field_visibility( section );
+	}
+js;
 		}
 	exit();
 	}
@@ -285,7 +452,7 @@ function _sed_sf_js()
 
 h1(#top). SED Section Fields Help.
 
-Introduces section-specific named overrides for custom fields.
+Introduces section-specific overrides for admin interface fields.
 
 h2(#changelog). Change Log
 

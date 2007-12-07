@@ -35,6 +35,7 @@ global $_sed_sf_l18n;
 $_sed_sf_l18n = array(
 	'write_tab_heading' 	=> 'Write Tab Fields...',
 	'hide_cf' 				=> 'Hide "{global_label}" (cf#{cfnum}) on write tab?',
+	'hide_section'			=> 'Hide this section from the section list on the write tab?',
 	);
 
 function _sed_sf_gtxt( $what , $args=array() )
@@ -78,21 +79,15 @@ function _sed_sf_enumerate_strings()
 	}
 
 
+#===============================================================================
+#	Admin interface features...
+#===============================================================================
 if( @txpinterface === 'admin' )
 	{
 	register_callback( '_sed_sf_handle_article_pre' ,  'article' , '' , 1 );
 	register_callback( '_sed_sf_handle_article_post' , 'article' );
-	register_callback( '_sed_sf_insert_cfnames' ,      'section' , '' , 1 );
+	register_callback( '_sed_sf_section_markup' ,      'section' , '' , 1 );
 	register_callback( '_sed_sf_xml_server'     ,      'sed_sf' );
-	}
-
-switch(gps('sed_resources'))
-	{
-	case 'sed_sf_js':
-		_sed_sf_js();
-		break;
-	default:
-		break;
 	}
 
 function _sed_sf_make_section_key( $section )
@@ -102,7 +97,11 @@ function _sed_sf_make_section_key( $section )
 	}
 
 
-function _sed_sf_insert_cfnames_into_sections( $page )
+
+#===============================================================================
+#	Routines to handle admin presentation > sections tab...
+#===============================================================================
+function _sed_sf_inject_section_admin( $page )
 	{
 	#
 	#	Inserts the name text inputs into each sections' edit controls
@@ -161,16 +160,16 @@ function _sed_sf_insert_cfnames_into_sections( $page )
 	return $page;
 	}
 
-function _sed_sf_insert_cfnames( $event , $step )
+function _sed_sf_section_markup( $event , $step )
 	{
 	if( $step == 'section_save' )
-		_sed_sf_update_cfnames();
+		_sed_sf_update_section_field_data();
 
 	if( $step == '' || $step == 'section_save' )
-		ob_start( '_sed_sf_insert_cfnames_into_sections' );
+		ob_start( '_sed_sf_inject_section_admin' );
 	}
 
-function _sed_sf_update_cfnames()
+function _sed_sf_update_section_field_data()
 	{
 	#
 	#	Stores the custom-field labels for the section being saved
@@ -186,28 +185,36 @@ function _sed_sf_update_cfnames()
 		safe_delete('txp_prefs', "`name`='$oldkey'");
 		}
 
-	#
-	#	Build array of submitted values...
-	#
-	$data = array();
-	for( $x = 1; $x <= 10; $x++ )
+
+	if( 1 )		# Handle custom field visibility...
 		{
-		$field_name = $section . '_cf_' . $x . '_visible';
-		$value = ps( $field_name );
-		if( !empty( $value ) )
-			$data[$x] = $value;
-		else
-			$data[$x] = '0';
+		#
+		#	Build array of submitted values...
+		#
+		$data = array();
+		for( $x = 1; $x <= 10; $x++ )
+			{
+			$field_name = $section . '_cf_' . $x . '_visible';
+			$value = ps( $field_name );
+			if( !empty( $value ) )
+				$data[$x] = $value;
+			else
+				$data[$x] = '0';
+			}
+
+		#
+		#	Store the data...
+		#
+		$key = doSlash( _sed_sf_make_section_key( $section ) );
+		doArray( $data , 'doSlash' );
+		$value = serialize( $data );
+		set_pref( $key , $value , 'sed_sf' , 2 );
+		$prefs[ $key ] = $value;
 		}
 
-	#
-	#	Store the data...
-	#
-	$key = doSlash( _sed_sf_make_section_key( $section ) );
-	doArray( $data , 'doSlash' );
-	$value = serialize( $data );
-	set_pref( $key , $value , 'sed_sf' , 2 );
-	$prefs[ $key ] = $value;
+	if( 1 )		# Handle section visibility in write tab
+		{
+		}
 	}
 
 function _sed_sf_get_cfviz( $section )
@@ -227,6 +234,9 @@ function _sed_sf_get_cfviz( $section )
 	return $results;
 	}
 
+#===============================================================================
+#	Routines to handle admin content > write tab...
+#===============================================================================
 function _sed_sf_xml_serve_cfvisibility( $event , $step )
 	{
 	global $prefs;
@@ -237,10 +247,8 @@ function _sed_sf_xml_serve_cfvisibility( $event , $step )
 	$r = '';
 	for( $x=1 ; $x <= 10; $x++)
 		{
-		$label = @$cf_names[ $x ];
-		$r .= $label;
-		if ($x < 10)
-			$r .= ' | ';
+		$r .= @$cf_names[ $x ];
+		if ($x < 10) $r .= ' | ';
 		}
 	return $r;
 	}
@@ -271,11 +279,6 @@ function _sed_sf_handle_article_pre( $event , $step )
 function _sed_sf_handle_article_post( $event , $step )
 	{
 	echo n."<script src='" .hu."?sed_resources=sed_sf_js' type='text/javascript'></script>".n;
-
-	#
-	# QUESTION: Is it possible to grab the output buffer and insert the elements
-	# we need right here -- without using an output buffer handler?
-	#
 	}
 
 
@@ -303,6 +306,19 @@ function _sed_sf_inject_into_write( $page )
 	}
 
 
+
+#===============================================================================
+#	Javascript resources...
+#===============================================================================
+switch(gps('sed_resources'))
+	{
+	case 'sed_sf_js':
+		_sed_sf_js();
+		break;
+	default:
+		break;
+	}
+
 function _sed_sf_js()
 	{
 	$debug = false;
@@ -317,114 +333,114 @@ function _sed_sf_js()
 	else
 		{
 		echo <<<js
-var _sed_sf_section_select = null;
-var _sed_sf_last_req       = "";
-var _sed_sf_xml_manager    = false;
-if( window.XMLHttpRequest )
-	{
-	_sed_sf_xml_manager = new XMLHttpRequest();
-	}
-
-function _sed_sf_add_load_event(func)
-	{
-	var oldonload = window.onload;
-	if (typeof window.onload != 'function')
-		{
-		window.onload = func;
-		}
-	else
-		{
-		window.onload = function()
-			{
-			oldonload();
-			func();
-			}
-		}
-	}
-_sed_sf_add_load_event( function(){_sed_sf_js_init();} );
-function _sed_sf_js_init()
-	{
-	if (!document.getElementById)
-		{
-		return false;
-		}
-	_sed_sf_section_select = document.getElementById('section');
-	_sed_sf_on_section_change();
-
-	// Do what Rob Sables' rss_admin_show_adv_opts does...
-	// TODO: Parametirise this, show/hide on a per-section basis!
-	toggleDisplay('advanced');
-	}
-function _sed_sf_make_xml_req(req,req_receiver)
-	{
-	if( !_sed_sf_xml_manager || (req_receiver == null) )
-		return false;
-
-	if( (_sed_sf_last_req != req) && (req != '') )
-		{
-		if( _sed_sf_xml_manager && _sed_sf_xml_manager.readyState < 4 )
-			{
-			_sed_sf_xml_manager.abort();
-			}
-		if( window.ActiveXObject )
-			{
-			_sed_sf_xml_manager = new ActiveXObject("Microsoft.XMLHTTP");
-			}
-
-		_sed_sf_xml_manager.onreadystatechange = req_receiver;
-		_sed_sf_xml_manager.open("GET", req);
-		_sed_sf_xml_manager.send(null);
-		_sed_sf_last_req = req;
-		}
-	}
-function _sed_sf_request_section_custom_field_visibility( section )
-	{
-	var req = "?event=sed_sf&step=get_cfvisibility&section=" + section;
-	_sed_sf_make_xml_req( req , _sed_sf_field_vizibility_result_handler );
-	}
-function _sed_sf_field_vizibility_result_handler()
-	{
-	if (_sed_sf_xml_manager.readyState == 4)
-		{
-		var results = _sed_sf_xml_manager.responseText;
-		var cf_viz  = results.split( "|" );
-
-		for( x = 1; x <= 10 ; x++ )
-			{
-			var hide  = cf_viz[ x-1 ];
-			var para  = document.getElementById('custom-' + x + '-para' );
-
-			if( para != null )
+			var _sed_sf_section_select = null;
+			var _sed_sf_last_req       = "";
+			var _sed_sf_xml_manager    = false;
+			if( window.XMLHttpRequest )
 				{
-				hide = _sed_sf_trim( hide );
-				if( hide == '1' )
-					para.style.display="none"
-				else
-					para.style.display=""
+				_sed_sf_xml_manager = new XMLHttpRequest();
 				}
-			}
-		}
-	}
-function _sed_sf_trim(term)
-	{
-	var len = term.length;
-	var lenm1 = len - 1;
 
-	while (term.substring(0,1) == ' ')
-		{
-		term = term.substring(1, term.length);
-		}
-	while (term.substring(term.length-1, term.length) == ' ')
-		{
-		term = term.substring(0,term.length-1);
-		}
-	return term;
-	}
-function _sed_sf_on_section_change()
-	{
-	var section = _sed_sf_section_select.value;
-	_sed_sf_request_section_custom_field_visibility( section );
-	}
+			function _sed_sf_add_load_event(func)
+				{
+				var oldonload = window.onload;
+				if (typeof window.onload != 'function')
+					{
+					window.onload = func;
+					}
+				else
+					{
+					window.onload = function()
+						{
+						oldonload();
+						func();
+						}
+					}
+				}
+			_sed_sf_add_load_event( function(){_sed_sf_js_init();} );
+			function _sed_sf_js_init()
+				{
+				if (!document.getElementById)
+					{
+					return false;
+					}
+				_sed_sf_section_select = document.getElementById('section');
+				_sed_sf_on_section_change();
+
+				// Do what Rob Sables' rss_admin_show_adv_opts does...
+				// TODO: Parametirise this, show/hide on a per-section basis!
+				toggleDisplay('advanced');
+				}
+			function _sed_sf_make_xml_req(req,req_receiver)
+				{
+				if( !_sed_sf_xml_manager || (req_receiver == null) )
+					return false;
+
+				if( (_sed_sf_last_req != req) && (req != '') )
+					{
+					if( _sed_sf_xml_manager && _sed_sf_xml_manager.readyState < 4 )
+						{
+						_sed_sf_xml_manager.abort();
+						}
+					if( window.ActiveXObject )
+						{
+						_sed_sf_xml_manager = new ActiveXObject("Microsoft.XMLHTTP");
+						}
+
+					_sed_sf_xml_manager.onreadystatechange = req_receiver;
+					_sed_sf_xml_manager.open("GET", req);
+					_sed_sf_xml_manager.send(null);
+					_sed_sf_last_req = req;
+					}
+				}
+			function _sed_sf_request_section_custom_field_visibility( section )
+				{
+				var req = "?event=sed_sf&step=get_cfvisibility&section=" + section;
+				_sed_sf_make_xml_req( req , _sed_sf_field_vizibility_result_handler );
+				}
+			function _sed_sf_field_vizibility_result_handler()
+				{
+				if (_sed_sf_xml_manager.readyState == 4)
+					{
+					var results = _sed_sf_xml_manager.responseText;
+					var cf_viz  = results.split( "|" );
+
+					for( x = 1; x <= 10 ; x++ )
+						{
+						var hide  = cf_viz[ x-1 ];
+						var para  = document.getElementById('custom-' + x + '-para' );
+
+						if( para != null )
+							{
+							hide = _sed_sf_trim( hide );
+							if( hide == '1' )
+								para.style.display="none"
+							else
+								para.style.display=""
+							}
+						}
+					}
+				}
+			function _sed_sf_trim(term)
+				{
+				var len = term.length;
+				var lenm1 = len - 1;
+
+				while (term.substring(0,1) == ' ')
+					{
+					term = term.substring(1, term.length);
+					}
+				while (term.substring(term.length-1, term.length) == ' ')
+					{
+					term = term.substring(0,term.length-1);
+					}
+				return term;
+				}
+			function _sed_sf_on_section_change()
+				{
+				var section = _sed_sf_section_select.value;
+				_sed_sf_request_section_custom_field_visibility( section );
+				}
 js;
 		}
 	exit();

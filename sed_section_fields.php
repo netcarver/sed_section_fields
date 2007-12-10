@@ -13,7 +13,7 @@ if( !empty( $revision ) )
 
 $plugin['name'] = 'sed_section_fields';
 $plugin['version'] = '0.1' . $revision;
-$plugin['author'] = 'Stephen Dickinson';
+$plugin['author'] = 'Netcarver';
 $plugin['author_uri'] = 'http://txp-plugins.netcarving.com';
 $plugin['description'] = 'Provides admin interface field customisation on a per-section basis.';
 $plugin['type'] = '1';

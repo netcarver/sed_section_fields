@@ -88,6 +88,15 @@ if( @txpinterface === 'admin' )
 	register_callback( '_sed_sf_handle_article_post' , 'article' );
 	register_callback( '_sed_sf_section_markup' ,      'section' , '' , 1 );
 	register_callback( '_sed_sf_xml_server'     ,      'sed_sf' );
+
+	switch(gps('sed_resources') )
+		{
+		case 'sed_sf_js':
+			_sed_sf_js();
+			break;
+		default:
+			break;
+		}
 	}
 
 function _sed_sf_make_section_key( $section )
@@ -278,7 +287,7 @@ function _sed_sf_handle_article_pre( $event , $step )
 	}
 function _sed_sf_handle_article_post( $event , $step )
 	{
-	echo n."<script src='" .hu."?sed_resources=sed_sf_js' type='text/javascript'></script>".n;
+	echo n."<script src='" .hu."textpattern/index.php?sed_resources=sed_sf_js' type='text/javascript'></script>".n;
 	}
 
 
@@ -310,15 +319,6 @@ function _sed_sf_inject_into_write( $page )
 #===============================================================================
 #	Javascript resources...
 #===============================================================================
-switch(gps('sed_resources'))
-	{
-	case 'sed_sf_js':
-		_sed_sf_js();
-		break;
-	default:
-		break;
-	}
-
 function _sed_sf_js()
 	{
 	$debug = false;

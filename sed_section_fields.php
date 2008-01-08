@@ -12,7 +12,7 @@ if( !empty( $revision ) )
 	}
 
 $plugin['name'] = 'sed_section_fields';
-$plugin['version'] = '0.1' . $revision;
+$plugin['version'] = '0.2' . $revision;
 $plugin['author'] = 'Netcarver';
 $plugin['author_uri'] = 'http://txp-plugins.netcarving.com';
 $plugin['description'] = 'Provides admin interface field customisation on a per-section basis.';
@@ -105,6 +105,36 @@ function _sed_sf_make_section_key( $section )
 	return $key;
 	}
 
+function _sed_sf_get_max_field_number()
+	{
+	static $max;
+
+	if( !isset( $max ) )
+		{
+		if( is_callable( 'glz_custom_fields_MySQL' ) )
+			$max = (int)count( glz_custom_fields_MySQL("all") );
+		else
+			$max = 10;
+		}
+
+	return $max;
+	}
+
+function _sed_sf_get_cf_char()
+	{
+	static $c;
+
+	if( !isset($c) )
+		{
+		if( is_callable('glz_custom_fields') )
+			$c = '_';	# glz_custom_fields char.
+		else
+			$c = '-';	# default TXP cf char.
+		}
+
+	return $c;
+	}
+
 
 
 #===============================================================================
@@ -140,7 +170,8 @@ function _sed_sf_inject_section_admin( $page )
 			$f = '<input type="text" name="name" value="' . $name . '" size="20" class="edit" tabindex="1" /></td></tr>'. n.n . '<tr><td class="noline" style="text-align: right; vertical-align: middle;">' . gTxt('section_longtitle') . ': </td><td class="noline"><input type="text" name="title" value="' . $title . '" size="20" class="edit" tabindex="1" /></td></tr>';
 
 			$r = n.n.'<tr><td colspan="2">'.$write_tab_header.'</td></tr>'.n;
-			for( $x = 1; $x <= 10; $x++ )
+			$max = _sed_sf_get_max_field_number();
+			for( $x = 1; $x <= $max; $x++ )
 				{
 				$value = $cf_names[ $x ];
 				$field_name = 'cf_' . $x . '_set';
@@ -201,7 +232,8 @@ function _sed_sf_update_section_field_data()
 		#	Build array of submitted values...
 		#
 		$data = array();
-		for( $x = 1; $x <= 10; $x++ )
+		$max = _sed_sf_get_max_field_number();
+		for( $x = 1; $x <= $max; $x++ )
 			{
 			$field_name = $section . '_cf_' . $x . '_visible';
 			$value = ps( $field_name );
@@ -254,10 +286,11 @@ function _sed_sf_xml_serve_cfvisibility( $event , $step )
 	$cf_names = _sed_sf_get_cfviz( $section );
 
 	$r = '';
-	for( $x=1 ; $x <= 10; $x++)
+	$max = _sed_sf_get_max_field_number();
+	for( $x=1 ; $x <= $max; $x++)
 		{
 		$r .= @$cf_names[ $x ];
-		if ($x < 10) $r .= ' | ';
+		if ($x < $max) $r .= ' | ';
 		}
 	return $r;
 	}
@@ -283,6 +316,8 @@ function _sed_sf_xml_server( $event , $step )
 
 function _sed_sf_handle_article_pre( $event , $step )
 	{
+	global $max;
+	$max = _sed_sf_get_max_field_number();
 	ob_start( '_sed_sf_inject_into_write' );
 	}
 function _sed_sf_handle_article_post( $event , $step )
@@ -304,10 +339,12 @@ function _sed_sf_inject_into_write( $page )
 	#	Inject markup into custom field controls so the javascript can access
 	# them easily...
 	#
-	for( $x = 1 ; $x <= 10 ; $x++ )
+	$c = _sed_sf_get_cf_char();
+	global $max;
+	for( $x = 1 ; $x <= $max ; $x++ )
 		{
-		$f = '<p><label for="custom-' . $x .  '">';
-		$r = '<p id="custom-' . $x . '-para"><label for="custom-' . $x .  '" id="custom-'. $x . '-label">';
+		$f = '<p><label for="custom' . $c . $x .  '">';
+		$r = '<p id="custom' . $c . $x . $c . 'para"><label for="custom' . $c . $x .  '" id="custom'. $c . $x . $c . 'label">';
 		$page = str_replace( $f , $r , $page );
 		}
 
@@ -332,9 +369,13 @@ function _sed_sf_js()
 		}
 	else
 		{
+		$c = _sed_sf_get_cf_char();
+		$max = _sed_sf_get_max_field_number();
 		echo <<<js
 			var _sed_sf_section_select = null;
 			var _sed_sf_last_req       = "";
+			var _sed_cf_char           = "$c";
+			var _sed_cf_max            = $max;
 			var _sed_sf_xml_manager    = false;
 			if( window.XMLHttpRequest )
 				{
@@ -405,10 +446,10 @@ function _sed_sf_js()
 					var results = _sed_sf_xml_manager.responseText;
 					var cf_viz  = results.split( "|" );
 
-					for( x = 1; x <= 10 ; x++ )
+					for( x = 1; x <= _sed_cf_max ; x++ )
 						{
 						var hide  = cf_viz[ x-1 ];
-						var para  = document.getElementById('custom-' + x + '-para' );
+						var para  = document.getElementById('custom' + _sed_cf_char + x + _sed_cf_char + 'para' );
 
 						if( para != null )
 							{
@@ -471,6 +512,10 @@ h1(#top). SED Section Fields Help.
 Introduces section-specific overrides for admin interface fields.
 
 h2(#changelog). Change Log
+
+v0.2
+
+* Knows how to hide glz_custom_fields too.
 
 v0.1
 

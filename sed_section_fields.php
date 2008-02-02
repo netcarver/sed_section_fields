@@ -84,6 +84,8 @@ function _sed_sf_enumerate_strings()
 #===============================================================================
 if( @txpinterface === 'admin' )
 	{
+	add_privs('sed_sf' , '1,2,3,4,5,6');
+
 	register_callback( '_sed_sf_handle_article_pre' ,  'article' , '' , 1 );
 	register_callback( '_sed_sf_handle_article_post' , 'article' );
 	register_callback( '_sed_sf_section_markup' ,      'section' , '' , 1 );

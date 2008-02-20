@@ -22,6 +22,8 @@ $plugin['type'] = '1';
 
 # --- BEGIN PLUGIN CODE ---
 
+global $_sed_sf_using_glz_custom_fields;
+
 #
 #	Define a unique prefix for our strings (make sure there is no '-' in it!)
 #
@@ -86,6 +88,9 @@ if( @txpinterface === 'admin' )
 	{
 	add_privs('sed_sf' , '1,2,3,4,5,6');
 
+	global $_sed_sf_using_glz_custom_fields;
+	$_sed_sf_using_glz_custom_fields = load_plugin('glz_custom_fields');
+
 	register_callback( '_sed_sf_handle_article_pre' ,  'article' , '' , 1 );
 	register_callback( '_sed_sf_handle_article_post' , 'article' );
 	register_callback( '_sed_sf_section_markup' ,      'section' , '' , 1 );
@@ -124,15 +129,9 @@ function _sed_sf_get_max_field_number()
 
 function _sed_sf_get_cf_char()
 	{
-	static $c;
+	global $_sed_sf_using_glz_custom_fields;
 
-	if( !isset($c) )
-		{
-		if( is_callable('glz_custom_fields') )
-			$c = '_';	# glz_custom_fields char.
-		else
-			$c = '-';	# default TXP cf char.
-		}
+	$c = ( $_sed_sf_using_glz_custom_fields ) ? '_' : '-';
 
 	return $c;
 	}
@@ -166,6 +165,7 @@ function _sed_sf_inject_section_admin( $page )
 			{
 			$name  = $row['name'];
 			$title = $row['title'];
+			$title = strtr( $title , array( "'"=>'&#39;' , '"'=>'&#34;' ) );
 
 			$cf_names = _sed_sf_get_cfviz( $name );
 
@@ -337,19 +337,6 @@ function _sed_sf_inject_into_write( $page )
 	$r = 'onchange="_sed_sf_on_section_change()" ';
 	$page = str_replace( $f , $f.$r , $page );
 
-	#
-	#	Inject markup into custom field controls so the javascript can access
-	# them easily...
-	#
-	$c = _sed_sf_get_cf_char();
-	global $max;
-	for( $x = 1 ; $x <= $max ; $x++ )
-		{
-		$f = '<p><label for="custom' . $c . $x .  '">';
-		$r = '<p id="custom' . $c . $x . $c . 'para"><label for="custom' . $c . $x .  '" id="custom'. $c . $x . $c . 'label">';
-		$page = str_replace( $f , $r , $page );
-		}
-
 	return $page;
 	}
 
@@ -451,16 +438,13 @@ function _sed_sf_js()
 					for( x = 1; x <= _sed_cf_max ; x++ )
 						{
 						var hide  = cf_viz[ x-1 ];
-						var para  = document.getElementById('custom' + _sed_cf_char + x + _sed_cf_char + 'para' );
+						var para = 'p:has(label[for=custom' + _sed_cf_char + x + '])';
 
-						if( para != null )
-							{
-							hide = _sed_sf_trim( hide );
-							if( hide == '1' )
-								para.style.display="none"
-							else
-								para.style.display=""
-							}
+						hide = _sed_sf_trim( hide );
+						if( hide == '1' )
+							$(para).hide();
+						else
+							$(para).show();
 						}
 					}
 				}

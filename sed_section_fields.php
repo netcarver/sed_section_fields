@@ -62,12 +62,6 @@ if( @txpinterface === 'admin' )
 		}
 	}
 
-function _sed_sf_make_section_key( $section )
-	{
-	$key = 'sed_sf_' . $section . '_field_labels';
-	return $key;
-	}
-
 function _sed_sf_get_max_field_number()
 	{
 	static $max;
@@ -90,6 +84,30 @@ function _sed_sf_get_cf_char()
 	$c = ( $_sed_sf_using_glz_custom_fields ) ? '_' : '-';
 
 	return $c;
+	}
+
+
+#===============================================================================
+#	Data access routines...
+#===============================================================================
+function _sed_sf_make_section_key( $section )
+	{
+	return 'sed_sf_' . $section . '_field_labels';
+	}
+
+function _sed_sf_store_data( $section , $value )
+	{
+	$key = _sed_sf_make_section_key( $section );
+	set_pref( doSlash( $key ) , doSlash( $value ) , 'sed_sf' , 2 );
+	$prefs[ $key ] = $value;
+	}
+
+function _sed_sf_get_data( $section )
+	{
+	global $prefs;
+
+	$key = _sed_sf_make_section_key( $section );
+	return ( isset( $prefs[ $key ] ) ) ? $prefs[ $key ] : '' ;
 	}
 
 
@@ -125,7 +143,9 @@ function _sed_sf_inject_section_admin( $page )
 			$title = $row['title'];
 			$title = strtr( $title , array( "'"=>'&#39;' , '"'=>'&#34;' ) );
 
-			$cf_names = _sed_sf_get_cfviz( $name );
+			$data = _sed_sf_get_data( $name );
+			$data_array = sed_lib_extract_name_value_pairs( $data );
+			$cf_names = $data_array['cf'];
 
 			$f = '<input type="text" name="name" value="' . $name . '" size="20" class="edit" tabindex="1" /></td></tr>'. n.n . '<tr><td class="noline" style="text-align: right; vertical-align: middle;">' . gTxt('section_longtitle') . ': </td><td class="noline"><input type="text" name="title" value="' . $title . '" size="20" class="edit" tabindex="1" /></td></tr>';
 
@@ -133,7 +153,7 @@ function _sed_sf_inject_section_admin( $page )
 			$max = _sed_sf_get_max_field_number();
 			for( $x = 1; $x <= $max; $x++ )
 				{
-				$value = $cf_names[ $x ];
+				$value = $cf_names[ $x-1 ];
 				$field_name = 'cf_' . $x . '_set';
 				$global_label = $prefs [ 'custom_' . $x . '_set' ];
 				$args  = array( '{global_label}'=>$global_label , '{cfnum}'=>$x );
@@ -187,29 +207,17 @@ function _sed_sf_update_section_field_data()
 
 	if( 1 )		# Handle custom field visibility...
 		{
-		#
-		#	Build array of submitted values...
-		#
-		$data = array();
+		$data = '';
 		$max = _sed_sf_get_max_field_number();
 		for( $x = 1; $x <= $max; $x++ )
 			{
 			$field_name = $section . '_cf_' . $x . '_visible';
 			$value = ps( $field_name );
-			if( !empty( $value ) )
-				$data[$x] = $value;
-			else
-				$data[$x] = '0';
+			$data .= (empty( $value )) ? '0' : '1';
 			}
+		$data = 'cf="'.$data.'";';
 
-		#
-		#	Store the data...
-		#
-		$key = doSlash( _sed_sf_make_section_key( $section ) );
-		doArray( $data , 'doSlash' );
-		$value = serialize( $data );
-		set_pref( $key , $value , 'sed_sf' , 2 );
-		$prefs[ $key ] = $value;
+		_sed_sf_store_data( $section , $data );
 		}
 
 	if( 1 )		# Handle section visibility in write tab
@@ -217,41 +225,25 @@ function _sed_sf_update_section_field_data()
 		}
 	}
 
-function _sed_sf_get_cfviz( $section )
-	{
-	#
-	#	Given the name of a section, will grab the labels for the custom fields
-	# as an array 'number' => 'label'
-	#
-	global $prefs;
-
-	$key = _sed_sf_make_section_key( $section );
-	if( isset( $prefs[ $key ] ) )
-		$results = unserialize( $prefs[ $key ] );
-	else
-		$results = array();
-
-	return $results;
-	}
 
 #===============================================================================
 #	Routines to handle admin content > write tab...
 #===============================================================================
-function _sed_sf_xml_serve_cfvisibility( $event , $step )
+function _sed_sf_xml_serve_section_data( $event , $step )
 	{
-	global $prefs;
-
+	$result  = '';
 	$section = gps( 'section' );
-	$cf_names = _sed_sf_get_cfviz( $section );
+	$what    = gps( 'data-id' );
 
-	$r = '';
-	$max = _sed_sf_get_max_field_number();
-	for( $x=1 ; $x <= $max; $x++)
-		{
-		$r .= @$cf_names[ $x ];
-		if ($x < $max) $r .= ' | ';
-		}
-	return $r;
+	$raw_data = _sed_sf_get_data( $section );
+	$data_array = sed_lib_extract_name_value_pairs( $raw_data );
+
+	if( $what === 'all' || !array_key_exists($what, $data_array) )
+		$result = $raw_data;
+	else
+		$result = $data_array[$what];
+
+	return $result;
 	}
 function _sed_sf_xml_server( $event , $step )
 	{
@@ -261,8 +253,8 @@ function _sed_sf_xml_server( $event , $step )
 
 	switch( $step )	# step selects among possible content types...
 		{
-		case 'get_cfvisibility' :
-			$r =  _sed_sf_xml_serve_cfvisibility( $event , $step );
+		case 'get_section_data' :
+			$r =  _sed_sf_xml_serve_section_data( $event , $step );
 			break;
 		default:
 			$r = '';
@@ -382,7 +374,7 @@ function _sed_sf_js()
 				}
 			function _sed_sf_request_section_custom_field_visibility( section )
 				{
-				var req = "?event=sed_sf&step=get_cfvisibility&section=" + section;
+				var req = "?event=sed_sf&step=get_section_data&section=" + section + "&data-id=cf";
 				_sed_sf_make_xml_req( req , _sed_sf_field_vizibility_result_handler );
 				}
 			function _sed_sf_field_vizibility_result_handler()
@@ -390,14 +382,12 @@ function _sed_sf_js()
 				if (_sed_sf_xml_manager.readyState == 4)
 					{
 					var results = _sed_sf_xml_manager.responseText;
-					var cf_viz  = results.split( "|" );
-
+					if( results != null )
+						{
 					for( x = 1; x <= _sed_cf_max ; x++ )
 						{
-						var hide  = cf_viz[ x-1 ];
+							var hide  = results.substring( x-1 , x );
 						var para = 'p:has(label[for=custom' + _sed_cf_char + x + '])';
-
-						hide = _sed_sf_trim( hide );
 						if( hide == '1' )
 							$(para).hide();
 						else
@@ -405,20 +395,6 @@ function _sed_sf_js()
 						}
 					}
 				}
-			function _sed_sf_trim(term)
-				{
-				var len = term.length;
-				var lenm1 = len - 1;
-
-					while (term.substring(0,1) == ' ')
-						{
-						term = term.substring(1, term.length);
-						}
-					while (term.substring(term.length-1, term.length) == ' ')
-						{
-						term = term.substring(0,term.length-1);
-					}
-				return term;
 				}
 			function _sed_sf_on_section_change()
 				{

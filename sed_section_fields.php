@@ -24,11 +24,7 @@ $plugin['type'] = '1';
 
 global $_sed_sf_using_glz_custom_fields;
 
-#
-#	Define a unique prefix for our strings (make sure there is no '-' in it!)
-#
-if( !defined( 'SED_SF_PREFIX' ) )
-	define( 'SED_SF_PREFIX' , 'sed_sf' );
+@require_plugin('sed_plugin_library');
 
 #===============================================================================
 #	Strings for internationalisation...
@@ -39,46 +35,6 @@ $_sed_sf_l18n = array(
 	'hide_cf' 				=> 'Hide "{global_label}" (cf#{cfnum}) on write tab?',
 	'hide_section'			=> 'Hide this section from the section list on the write tab?',
 	);
-
-function _sed_sf_gtxt( $what , $args=array() )
-	{
-	global $textarray;
-	global $_sed_sf_l18n;
-
-	$key = SED_SF_PREFIX . '-' . $what;
-	$key = strtolower($key);
-
-	if(isset($textarray[$key]))
-		$str = $textarray[$key];
-	else
-		{
-		$key = strtolower($what);
-
-		if( isset( $_sed_sf_l18n[$key] ) )
-			$str = $_sed_sf_l18n[$key];
-		else
-			$str = $what;
-		}
-	$str = strtr( $str , $args );
-	return $str;
-	}
-
-#===============================================================================
-#	MLP Registration...
-#===============================================================================
-register_callback( '_sed_sf_enumerate_strings' , 'l10n.enumerate_strings' );
-function _sed_sf_enumerate_strings()
-	{
-	global $_sed_sf_l18n;
-	$r = array	(
-				'owner'		=> 'sed_section_fields',
-				'prefix'	=> SED_SF_PREFIX,
-				'lang'		=> 'en-gb',
-				'event'		=> 'admin',
-				'strings'	=> $_sed_sf_l18n,
-				);
-	return $r;
-	}
 
 
 #===============================================================================
@@ -147,7 +103,7 @@ function _sed_sf_inject_section_admin( $page )
 	#	Inserts the name text inputs into each sections' edit controls
 	# current implementation uses output buffer...
 	#
-	global $DB , $prefs;
+	global $DB , $prefs , $_sed_sf_l18n;
 
 	if( !isset( $DB ) )
 		$DB = new db;
@@ -155,7 +111,9 @@ function _sed_sf_inject_section_admin( $page )
 	if( !isset( $prefs ) )
 		$prefs = get_prefs();
 
-	$write_tab_header = _sed_sf_gtxt( 'write_tab_heading' );
+	$mlp = new sed_lib_mlp( 'sed_section_fields' , $_sed_sf_l18n );
+
+	$write_tab_header = $mlp->gTxt( 'write_tab_heading' );
 
 	$rows = safe_rows_start( '*' , 'txp_section' , "1=1" );
 	$c = @mysql_num_rows($rows);
@@ -179,7 +137,7 @@ function _sed_sf_inject_section_admin( $page )
 				$field_name = 'cf_' . $x . '_set';
 				$global_label = $prefs [ 'custom_' . $x . '_set' ];
 				$args  = array( '{global_label}'=>$global_label , '{cfnum}'=>$x );
-				$label = _sed_sf_gtxt( 'hide_cf', $args );
+				$label = $mlp->gTxt( 'hide_cf', $args );
 				if( !empty( $global_label ) )
 					{
 					#	Only bother showing the show/hide radio buttons if the global field label exists.
@@ -226,7 +184,6 @@ function _sed_sf_update_section_field_data()
 		$oldkey = doSlash( _sed_sf_make_section_key( $oldsection ) );
 		safe_delete('txp_prefs', "`name`='$oldkey'");
 		}
-
 
 	if( 1 )		# Handle custom field visibility...
 		{

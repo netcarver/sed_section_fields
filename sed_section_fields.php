@@ -57,6 +57,15 @@ if( @txpinterface === 'admin' )
 		case 'sed_sf_js':
 			_sed_sf_js();
 			break;
+
+		case 'update_data_format': # Only for upgrades from v2 to v3+ of the plugin.
+			_sed_sf_upgrade_storage_format();
+			$uri = 'http://' . $GLOBALS['siteurl'] . '/textpattern/index.php?event=prefs';
+			txp_status_header("302 Found");
+			header("Location: $uri");
+			exit;
+			break;
+
 		default:
 			break;
 		}
@@ -110,6 +119,43 @@ function _sed_sf_get_data( $section )
 	return ( isset( $prefs[ $key ] ) ) ? $prefs[ $key ] : '' ;
 	}
 
+function _sed_sf_upgrade_storage_format()
+	{
+	# Iterate over all sections.
+	#   Grab the old, serialized data
+	#	Build replacement string
+	#	Store it over the old data
+
+	function _sed_sf_convert_section_data_format($old_format)
+		{
+		$r = '';
+		$old_format=@unserialize($old_format);
+		if( is_array( $old_format ) )
+			{
+			$r = 'cf="';
+			foreach( $old_format as $number=>$value )
+				{
+				$r .= ($value) ? '1' : '0' ;
+				}
+			$r .= '";';
+			}
+		return $r;
+		}
+
+	$rows = safe_rows_start( 'name' , 'txp_section' , "1=1" );
+	$c = @mysql_num_rows($rows);
+	if( $rows && $c > 0 )
+		{
+		while( $row = nextRow($rows) )
+			{
+			$section = $row['name'];
+			$data = _sed_sf_get_data( $section );
+			$new_data = _sed_sf_convert_section_data_format($data);
+			_sed_sf_store_data( $section , $new_data );
+			}
+		}
+
+	}
 
 
 #===============================================================================
@@ -430,11 +476,17 @@ h1(#top). SED Section Fields Help.
 
 Introduces section-specific overrides for admin interface fields.
 
+h2. Upgrading from version 2
+
+If you are updating for the first time from v2 to v3 (or higher) of this plugin then you
+will need to upgrade the section_field preferences by following <a href="/textpattern/index.php?sed_resources=update_data_format" rel="nofollow">this link to upgrade the data.</a>
+
+
 h2(#changelog). Change Log
 
 v0.3
 
-* Depends upon sed_plugin_lib for MLP support and compact storage format (thanks Dale)
+* Depends upon sed_plugin_lib for MLP support and compact storage format (thanks Dale.)
 
 v0.2
 

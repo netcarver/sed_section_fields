@@ -128,17 +128,18 @@ function _sed_sf_upgrade_storage_format()
 
 	function _sed_sf_convert_section_data_format($old_format)
 		{
-		$r = '';
-		$old_format=@unserialize($old_format);
-		if( is_array( $old_format ) )
+		$data=@unserialize($old_format);
+		if( is_array( $data ) )
 			{
 			$r = 'cf="';
-			foreach( $old_format as $number=>$value )
+			foreach( $data as $number=>$value )
 				{
 				$r .= ($value) ? '1' : '0' ;
 				}
 			$r .= '";';
 			}
+		else
+			$r = $old_format;
 		return $r;
 		}
 

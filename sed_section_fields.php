@@ -453,13 +453,13 @@ function _sed_sf_js()
 				var len = term.length;
 				var lenm1 = len - 1;
 
-				while (term.substring(0,1) == ' ')
-					{
-					term = term.substring(1, term.length);
-					}
-				while (term.substring(term.length-1, term.length) == ' ')
-					{
-					term = term.substring(0,term.length-1);
+					while (term.substring(0,1) == ' ')
+						{
+						term = term.substring(1, term.length);
+						}
+					while (term.substring(term.length-1, term.length) == ' ')
+						{
+						term = term.substring(0,term.length-1);
 					}
 				return term;
 				}

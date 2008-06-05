@@ -12,7 +12,7 @@ if( !empty( $revision ) )
 	}
 
 $plugin['name'] = 'sed_section_fields';
-$plugin['version'] = '0.2' . $revision;
+$plugin['version'] = '0.3' . $revision;
 $plugin['author'] = 'Netcarver';
 $plugin['author_uri'] = 'http://txp-plugins.netcarving.com';
 $plugin['description'] = 'Provides admin interface field customisation on a per-section basis.';
@@ -455,6 +455,10 @@ h1(#top). SED Section Fields Help.
 Introduces section-specific overrides for admin interface fields.
 
 h2(#changelog). Change Log
+
+v0.3
+
+* Depends upon sed_plugin_lib for MLP support and compact storage format (thanks Dale)
 
 v0.2
 

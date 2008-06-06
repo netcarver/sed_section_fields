@@ -106,6 +106,7 @@ function _sed_sf_make_section_key( $section )
 
 function _sed_sf_store_data( $section , $value )
 	{
+	global $prefs;
 	$key = _sed_sf_make_section_key( $section );
 	set_pref( doSlash( $key ) , doSlash( $value ) , 'sed_sf' , 2 );
 	$prefs[ $key ] = $value;

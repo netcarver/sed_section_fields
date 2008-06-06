@@ -32,8 +32,8 @@ global $_sed_sf_using_glz_custom_fields;
 global $_sed_sf_l18n;
 $_sed_sf_l18n = array(
 	'write_tab_heading' 	=> 'Write Tab Fields...',
-	'hide_cf' 				=> 'Hide "{global_label}" (cf#{cfnum}) on write tab?',
-	'hide_section'			=> 'Hide this section from the section list on the write tab?',
+	'hide_cf' 				=> 'Hide "{global_label}" (cf#{cfnum}) ?',
+	'hide_section'			=> 'Hide this section from the section list ?',
 	);
 
 
@@ -119,43 +119,43 @@ function _sed_sf_get_data( $section )
 	return ( isset( $prefs[ $key ] ) ) ? $prefs[ $key ] : '' ;
 	}
 
-function _sed_sf_upgrade_storage_format()
+function _sed_sf_for_each_section_cb( $fn , $fn_data='', $where = "name != 'default'" )
 	{
-	# Iterate over all sections.
-	#   Grab the old, serialized data
-	#	Build replacement string
-	#	Store it over the old data
+	#	Iterates over the sections, calling the given function to process them.
+	if( !is_callable( $fn ) )
+		return false;
 
-	function _sed_sf_convert_section_data_format($old_format)
-		{
-		$data=@unserialize($old_format);
-		if( is_array( $data ) )
-			{
-			$r = 'cf="';
-			foreach( $data as $number=>$value )
-				{
-				$r .= ($value) ? '1' : '0' ;
-				}
-			$r .= '";';
-			}
-		else
-			$r = $old_format;
-		return $r;
-		}
-
-	$rows = safe_rows_start( 'name' , 'txp_section' , "name != 'default'" );
+	$rows = safe_rows_start( '*' , 'txp_section' , $where );
 	$c = @mysql_num_rows($rows);
 	if( $rows && $c > 0 )
 		{
 		while( $row = nextRow($rows) )
 			{
 			$section = $row['name'];
-			$data = _sed_sf_get_data( $section );
-			$new_data = _sed_sf_convert_section_data_format($data);
-			_sed_sf_store_data( $section , $new_data );
+			call_user_func( $fn , $section , $row , $fn_data );
 			}
 		}
 
+	return true;
+	}
+
+function _sed_sf_upgrade_storage_format()
+	{
+	function _sed_sf_upgrade_section_data( $section )
+		{
+		$r = $data = _sed_sf_get_data( $section );
+		$data=@unserialize($data);
+		if( is_array( $data ) )
+			{
+			$r = '';
+			foreach( $data as $x=>$value )
+				$r .= ($value) ? '1' : '0' ;
+			$r = 'cf="'.$r.'";';
+			}
+		_sed_sf_store_data( $section , $r );
+		}
+
+	_sed_sf_for_each_section_cb( '_sed_sf_upgrade_section_data' );
 	}
 
 
@@ -192,10 +192,11 @@ function _sed_sf_inject_section_admin( $page )
 
 			$data = _sed_sf_get_data( $name );
 			$data_array = sed_lib_extract_name_value_pairs( $data );
-			$cf_names = $data_array['cf'];
 
 			$f = '<input type="text" name="name" value="' . $name . '" size="20" class="edit" tabindex="1" /></td></tr>'. n.n . '<tr><td class="noline" style="text-align: right; vertical-align: middle;">' . gTxt('section_longtitle') . ': </td><td class="noline"><input type="text" name="title" value="' . $title . '" size="20" class="edit" tabindex="1" /></td></tr>';
 
+			# Insert custom field visibility controls...
+			$cf_names = $data_array['cf'];
 			$r = n.n.'<tr><td colspan="2">'.$write_tab_header.'</td></tr>'.n;
 			$max = _sed_sf_get_max_field_number();
 			for( $x = 1; $x <= $max; $x++ )

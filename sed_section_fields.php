@@ -245,31 +245,27 @@ function _sed_sf_update_section_field_data()
 
 	$section    = gps( 'name' );
 	$oldsection = gps( 'old_name' );
+	$data = '';
 
-	if( $section !== $oldsection )	# renamed section?
+	# renamed section?
+	if( $section !== $oldsection )
 		{
 		$oldkey = doSlash( _sed_sf_make_section_key( $oldsection ) );
 		safe_delete('txp_prefs', "`name`='$oldkey'");
 		}
 
-	if( 1 )		# Handle custom field visibility...
+	# Handle custom field visibility...
+	$d = '';
+	$max = _sed_sf_get_max_field_number();
+	for( $x = 1; $x <= $max; $x++ )
 		{
-		$data = '';
-		$max = _sed_sf_get_max_field_number();
-		for( $x = 1; $x <= $max; $x++ )
-			{
-			$field_name = $section . '_cf_' . $x . '_visible';
-			$value = ps( $field_name );
-			$data .= (empty( $value )) ? '0' : '1';
-			}
-		$data = 'cf="'.$data.'";';
-
-		_sed_sf_store_data( $section , $data );
+		$field_name = $section . '_cf_' . $x . '_visible';
+		$value = ps( $field_name );
+		$d .= (empty( $value )) ? '0' : '1';
 		}
+	$data .= 'cf="'.$d.'";';
 
-	if( 1 )		# Handle section visibility in write tab
-		{
-		}
+	_sed_sf_store_data( $section , $data );
 	}
 
 

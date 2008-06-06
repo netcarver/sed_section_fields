@@ -143,7 +143,7 @@ function _sed_sf_upgrade_storage_format()
 		return $r;
 		}
 
-	$rows = safe_rows_start( 'name' , 'txp_section' , "1=1" );
+	$rows = safe_rows_start( 'name' , 'txp_section' , "name != 'default'" );
 	$c = @mysql_num_rows($rows);
 	if( $rows && $c > 0 )
 		{

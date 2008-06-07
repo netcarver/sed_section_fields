@@ -474,6 +474,8 @@ v0.3
 
 * Depends upon sed_plugin_lib for MLP support and compact storage format (thanks Dale.)
 * Using jQuery -- should now work on IE
+* Adds a "Show all" and "Hide all" link under custom field lists to allow all of
+  them to be turned on or off with one click (but still, don't forget to save your change!)
 
 v0.2
 

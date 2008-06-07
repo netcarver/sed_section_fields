@@ -244,7 +244,7 @@ function _sed_sf_inject_section_admin( $page )
 			#$r .= yesnoradio( 'hide_'.$name.'_from_list' , '0' );
 			#$r .= '</td></tr>'.n;
 
-			$r .= n.'<tr><td colspan="2"></td></tr>'.n.n;
+			#$r .= n.'<tr><td colspan="2"></td></tr>'.n.n;
 			$page = str_replace( $f , $f.$r , $page );
 			}
 		}

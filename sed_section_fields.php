@@ -171,6 +171,14 @@ function _sed_sf_upgrade_storage_format()
 #===============================================================================
 #	Routines to handle admin presentation > sections tab...
 #===============================================================================
+function _sed_sf_ps_extract( $section , $key )
+	{
+	$field_name = 'hide_'.$section.'_'.$key;
+	$value = ps( $field_name );
+	$d = (empty( $value )) ? '0' : '1';
+	return $key.'="'.$d.'";';
+	}
+
 function _sed_sf_handle_section_post( $event , $step )
 	{
 	echo n."<script src='" .hu."textpattern/index.php?sed_resources=sed_sf_section_js' type='text/javascript'></script>".n;

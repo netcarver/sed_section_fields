@@ -515,6 +515,11 @@ h2. Upgrading from version 2
 If you are updating for the first time from v2 to v3 (or higher) of this plugin then you
 will need to upgrade the section_field preferences by following <a href="/textpattern/index.php?sed_resources=update_data_format" rel="nofollow">this link to upgrade the data.</a>
 
+If the link doesn't work for you and you are running on a localhost server configuration, you could try typing the following into your browser to try to force an update...
+http://localhost/your-site-name-here/textpattern/index.php?sed_resources=update_data_format
+
+Change 'your-site-name-here' to the name of your local site.
+
 
 h2(#changelog). Change Log
 

@@ -45,6 +45,7 @@ $_sed_sf_l18n = array(
 if( @txpinterface === 'admin' )
 	{
 	add_privs('sed_sf' , '1,2,3,4,5,6');
+	add_privs('sed_sf.static_sections', '1' );	# which users always see all sections in the write-tab select box
 
 	global $_sed_sf_using_glz_custom_fields;
 	$_sed_sf_using_glz_custom_fields = load_plugin('glz_custom_fields');
@@ -240,11 +241,12 @@ function _sed_sf_inject_section_admin( $page )
 			$r .= $showhideall.n.'<tr><td colspan="2"></td></tr>'.n;
 
 			# TODO: Insert row to control visibility of this section in the write-tab section selector
-			#$r .= '<tr><td class="noline" style="text-align: right; vertical-align: middle;">Hide this section on write tab? </td><td class="noline">';
-			#$r .= yesnoradio( 'hide_'.$name.'_from_list' , '0' );
-			#$r .= '</td></tr>'.n;
+			$ss = $data_array['ss'];
+			$r .= '<tr><td class="noline" style="text-align: right; vertical-align: middle;">'.$mlp->gTxt('hide_section').'</td><td class="noline">';
+			$r .= yesnoradio( 'hide_'.$name.'_ss' , ($ss[0]) ? $ss[0] : '0' );
+			$r .= '</td></tr>'.n;
 
-			#$r .= n.'<tr><td colspan="2"></td></tr>'.n.n;
+			$r .= n.'<tr><td colspan="2"></td></tr>'.n.n;
 			$page = str_replace( $f , $f.$r , $page );
 			}
 		}
@@ -290,6 +292,9 @@ function _sed_sf_update_section_field_data()
 		}
 	$data .= 'cf="'.$d.'";';
 
+	# Handle static section marker...
+	$data .= _sed_sf_ps_extract( $section , 'ss' );
+
 	_sed_sf_store_data( $section , $data );
 	}
 
@@ -297,6 +302,8 @@ function _sed_sf_update_section_field_data()
 #===============================================================================
 #	Routines to handle admin content > write tab...
 #===============================================================================
+global $_sed_sf_static_sections;
+
 function _sed_sf_xml_serve_section_data( $event , $step )
 	{
 	$result  = '';
@@ -344,7 +351,15 @@ function _sed_sf_handle_article_post( $event , $step )
 	echo n."<script src='" .hu."textpattern/index.php?sed_resources=sed_sf_write_js' type='text/javascript'></script>".n;
 	}
 
-
+function _sed_sf_build_static_section_list( $section , $row )
+	{
+	global $_sed_sf_static_sections;
+	$data = _sed_sf_get_data( $section );
+	$data_array = sed_lib_extract_name_value_pairs( $data );
+	$ss = $data_array['ss'];
+	if( $ss[0] == '1' )
+		$_sed_sf_static_sections[] = $section;
+	}
 function _sed_sf_inject_into_write( $page )
 	{
 	#
@@ -353,6 +368,31 @@ function _sed_sf_inject_into_write( $page )
 	$f = '</a>]</span><br /><select id="section" ';
 	$r = 'onchange="_sed_sf_on_section_change()" ';
 	$page = str_replace( $f , $f.$r , $page );
+
+	#
+	# Remove static sections from the select box...
+	#
+	if( !has_privs('sed_sf.static_sections') )
+		{
+		global $DB , $prefs , $_sed_sf_static_sections;
+
+		if( !isset( $DB ) )
+			$DB = new db;
+
+		if( !isset( $prefs ) )
+			$prefs = get_prefs();
+
+		$_sed_sf_static_sections = array();
+		_sed_sf_for_each_section_cb( '_sed_sf_build_static_section_list' , &$_sed_sf_static_sections );
+		if( count( $_sed_sf_static_sections ) )
+			{
+			foreach( $_sed_sf_static_sections as $section )
+				{
+				$f = '<option value="'.$section.'">'.$section.'</option>'.n;
+				$page = str_replace( $f , '' , $page );
+				}
+			}
+		}
 
 	return $page;
 	}
@@ -470,18 +510,19 @@ will need to upgrade the section_field preferences by following <a href="/textpa
 
 h2(#changelog). Change Log
 
-v0.3
+h3. v0.3
 
-* Depends upon sed_plugin_lib for MLP support and compact storage format (thanks Dale.)
-* Using jQuery -- should now work on IE
 * Adds a "Show all" and "Hide all" link under custom field lists to allow all of
   them to be turned on or off with one click (but still, don't forget to save your change!)
+* Now allows sections to be marked as 'static' for exclusion from the write tab's section select list.
+* Depends upon sed_plugin_lib for MLP support and compact storage format (thanks Dale.)
+* Using jQuery -- should now work on IE
 
-v0.2
+h3. v0.2
 
 * Knows how to hide glz_custom_fields too.
 
-v0.1
+h3. v0.1
 
 * Use the presentations > section tab to choose which custom fields to hide for any
 article in that section.

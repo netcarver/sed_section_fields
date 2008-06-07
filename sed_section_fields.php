@@ -33,7 +33,7 @@ global $_sed_sf_l18n;
 $_sed_sf_l18n = array(
 	'write_tab_heading' 	=> 'Write Tab Fields...',
 	'hide_cf' 				=> 'Hide "{global_label}" (cf#{cfnum}) ?',
-	'hide_section'			=> 'Hide this section from the section list ?',
+	'hide_section'			=> 'Treat as a static section?',
 	);
 
 
@@ -355,97 +355,44 @@ function _sed_sf_js()
 		$c = _sed_sf_get_cf_char();
 		$max = _sed_sf_get_max_field_number();
 		echo <<<js
-			var _sed_sf_section_select = null;
-			var _sed_sf_last_req       = "";
 			var _sed_cf_char           = "$c";
 			var _sed_cf_max            = $max;
-			var _sed_sf_xml_manager    = false;
-			if( window.XMLHttpRequest )
+			var _sed_sf =
 				{
-				_sed_sf_xml_manager = new XMLHttpRequest();
-				}
-
-			function _sed_sf_add_load_event(func)
+				on_section_change : function ( section )
 				{
-				var oldonload = window.onload;
-				if (typeof window.onload != 'function')
-					{
-					window.onload = func;
-					}
-				else
-					{
-					window.onload = function()
-						{
-						oldonload();
-						func();
-						}
-					}
-				}
-			_sed_sf_add_load_event( function(){_sed_sf_js_init();} );
-			function _sed_sf_js_init()
-				{
-				if (!document.getElementById)
-					{
-					return false;
-					}
-				_sed_sf_section_select = document.getElementById('section');
-				_sed_sf_on_section_change();
-
-				// Do what Rob Sables' rss_admin_show_adv_opts does...
-				// TODO: Parametirise this, show/hide on a per-section basis!
-				toggleDisplay('advanced');
-				}
-			function _sed_sf_make_xml_req(req,req_receiver)
-				{
-				if( !_sed_sf_xml_manager || (req_receiver == null) )
-					return false;
-
-				if( (_sed_sf_last_req != req) && (req != '') )
-					{
-					if( _sed_sf_xml_manager && _sed_sf_xml_manager.readyState < 4 )
-						{
-						_sed_sf_xml_manager.abort();
-						}
-					if( window.ActiveXObject )
-						{
-						_sed_sf_xml_manager = new ActiveXObject("Microsoft.XMLHTTP");
-						}
-
-					_sed_sf_xml_manager.onreadystatechange = req_receiver;
-					_sed_sf_xml_manager.open("GET", req);
-					_sed_sf_xml_manager.send(null);
-					_sed_sf_last_req = req;
-					}
-				}
-			function _sed_sf_request_section_custom_field_visibility( section )
-				{
-				var req = "?event=sed_sf&step=get_section_data&section=" + section + "&data-id=cf";
-				_sed_sf_make_xml_req( req , _sed_sf_field_vizibility_result_handler );
-				}
-			function _sed_sf_field_vizibility_result_handler()
-				{
-				if (_sed_sf_xml_manager.readyState == 4)
-					{
-					var results = _sed_sf_xml_manager.responseText;
-					if( results != null )
+					$.get(
+						"../textpattern/index.php?event=sed_sf&step=get_section_data&data-id=cf&section=" + section, {},
+						function(result)
 						{
 					for( x = 1; x <= _sed_cf_max ; x++ )
 						{
-							var hide  = results.substring( x-1 , x );
+						var hide  = result.substring( x-1 , x );
 						var para = 'p:has(label[for=custom' + _sed_cf_char + x + '])';
 						if( hide == '1' )
 							$(para).hide();
 						else
 							$(para).show();
 						}
+							} ,
+						'string'
+						);
 					}
 				}
-				}
+
 			function _sed_sf_on_section_change()
 				{
-				var section = _sed_sf_section_select.value;
-				_sed_sf_request_section_custom_field_visibility( section );
+				_sed_sf.on_section_change( $("#section").val() );
 				}
+
+			$(document).ready
+				(
+				function()
+					{
+					_sed_sf_on_section_change();
+					$("#advanced").show();
+					}
+				);
 js;
 		}
 	exit();
@@ -486,6 +433,7 @@ h2(#changelog). Change Log
 v0.3
 
 * Depends upon sed_plugin_lib for MLP support and compact storage format (thanks Dale.)
+* Using jQuery -- should now work on IE
 
 v0.2
 

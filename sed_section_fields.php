@@ -58,11 +58,11 @@ if( @txpinterface === 'admin' )
 	switch(gps('sed_resources') )
 		{
 		case 'sed_sf_write_js':
-			sed_sf_write_js();
+			_sed_sf_write_js();
 			break;
 
 		case 'sed_sf_section_js':
-			sed_sf_section_js();
+			_sed_sf_section_js();
 			break;
 
 		case 'update_data_format': # Only for upgrades from v2 to v3+ of the plugin.
@@ -230,7 +230,7 @@ function _sed_sf_inject_section_admin( $page )
 					if( $count === 2 )
 						{
 						$showhideall = '<tr><td colspan="2" class="noline" style="text-align: right; vertical-align: middle;">';
-						$showhideall .= '<a onclick="_sed_sf_showall(\''.$name.'\')">'.$mlp->gTxt('show_all_text').'</a> / <a onclick="_sed_sf_hideall(\''.$name.'\')">'.$mlp->gTxt('hide_all_text').'</a>';
+						$showhideall .= '<a onclick="_sed_sf_showhideall(\''.$name.'\',\'0\')">'.$mlp->gTxt('show_all_text').'</a> / <a onclick="_sed_sf_showhideall(\''.$name.'\',\'1\')">'.$mlp->gTxt('hide_all_text').'</a>';
 						$showhideall .= '</td></tr>'.n;
 						}
 					$r .= '</td></tr>'.n;
@@ -370,27 +370,19 @@ function _sed_sf_js_headers()
 	header( "Cache-Control: public" );
 	}
 
-function sed_sf_section_js()
+function _sed_sf_section_js()
 	{
 	_sed_sf_js_headers();
 	$max = _sed_sf_get_max_field_number();
 
 	echo <<<js
 	var _sed_cf_max = $max;
-	function _sed_sf_showall(section)
-		{
-		for( x = 1; x <= _sed_cf_max ; x++ )
-			{
-			var name = "input[@name='" + section + '_cf_' + x + "_visible']:nth(0)";
-			$(name).attr("checked","checked");
-			}
-		}
 
-	function _sed_sf_hideall(section)
+	function _sed_sf_showhideall( section , pos )
 		{
 		for( x = 1; x <= _sed_cf_max ; x++ )
 			{
-			var name = "input[@name='" + section + '_cf_' + x + "_visible']:nth(1)";
+			var name = "input[@name='" + section + '_cf_' + x + "_visible']:nth(" + pos + ")";
 			$(name).attr("checked","checked");
 			}
 		}
@@ -398,7 +390,7 @@ js;
 	exit();
 	}
 
-function sed_sf_write_js()
+function _sed_sf_write_js()
 	{
 	_sed_sf_js_headers();
 		$c = _sed_sf_get_cf_char();

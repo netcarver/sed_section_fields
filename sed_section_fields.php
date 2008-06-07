@@ -34,6 +34,8 @@ $_sed_sf_l18n = array(
 	'write_tab_heading' 	=> 'Write Tab Fields...',
 	'hide_cf' 				=> 'Hide "{global_label}" (cf#{cfnum}) ?',
 	'hide_section'			=> 'Treat as a static section?',
+	'hide_all_text'			=> 'Hide all?',
+	'show_all_text'			=> 'Show all?',
 	);
 
 
@@ -49,13 +51,18 @@ if( @txpinterface === 'admin' )
 
 	register_callback( '_sed_sf_handle_article_pre' ,  'article' , '' , 1 );
 	register_callback( '_sed_sf_handle_article_post' , 'article' );
+	register_callback( '_sed_sf_handle_section_post' , 'section' );
 	register_callback( '_sed_sf_section_markup' ,      'section' , '' , 1 );
 	register_callback( '_sed_sf_xml_server'     ,      'sed_sf' );
 
 	switch(gps('sed_resources') )
 		{
-		case 'sed_sf_js':
-			_sed_sf_js();
+		case 'sed_sf_write_js':
+			sed_sf_write_js();
+			break;
+
+		case 'sed_sf_section_js':
+			sed_sf_section_js();
 			break;
 
 		case 'update_data_format': # Only for upgrades from v2 to v3+ of the plugin.
@@ -163,6 +170,11 @@ function _sed_sf_upgrade_storage_format()
 #===============================================================================
 #	Routines to handle admin presentation > sections tab...
 #===============================================================================
+function _sed_sf_handle_section_post( $event , $step )
+	{
+	echo n."<script src='" .hu."textpattern/index.php?sed_resources=sed_sf_section_js' type='text/javascript'></script>".n;
+	}
+
 function _sed_sf_inject_section_admin( $page )
 	{
 	#
@@ -200,6 +212,8 @@ function _sed_sf_inject_section_admin( $page )
 			$cf_names = $data_array['cf'];
 			$r = n.n.'<tr><td colspan="2">'.$write_tab_header.'</td></tr>'.n;
 			$max = _sed_sf_get_max_field_number();
+			$count = 0;
+			$showhideall = '';
 			for( $x = 1; $x <= $max; $x++ )
 				{
 				$value = $cf_names[ $x-1 ];
@@ -210,11 +224,20 @@ function _sed_sf_inject_section_admin( $page )
 				if( !empty( $global_label ) )
 					{
 					#	Only bother showing the show/hide radio buttons if the global field label exists.
+					$count += 1;
 					$r .= '<tr><td class="noline" style="text-align: right; vertical-align: middle;">' . $label . '</td><td class="noline">';
 					$r .= yesnoradio( $name.'_cf_'.$x.'_visible' , $value , '' , $field_name );
+					if( $count === 2 )
+						{
+						$showhideall = '<tr><td colspan="2" class="noline" style="text-align: right; vertical-align: middle;">';
+						$showhideall .= '<a onclick="_sed_sf_showall(\''.$name.'\')">'.$mlp->gTxt('show_all_text').'</a> / <a onclick="_sed_sf_hideall(\''.$name.'\')">'.$mlp->gTxt('hide_all_text').'</a>';
+						$showhideall .= '</td></tr>'.n;
+						}
 					$r .= '</td></tr>'.n;
 					}
 				}
+
+			$r .= $showhideall.n.'<tr><td colspan="2"></td></tr>'.n;
 
 			# TODO: Insert row to control visibility of this section in the write-tab section selector
 			#$r .= '<tr><td class="noline" style="text-align: right; vertical-align: middle;">Hide this section on write tab? </td><td class="noline">';
@@ -318,7 +341,7 @@ function _sed_sf_handle_article_pre( $event , $step )
 	}
 function _sed_sf_handle_article_post( $event , $step )
 	{
-	echo n."<script src='" .hu."textpattern/index.php?sed_resources=sed_sf_js' type='text/javascript'></script>".n;
+	echo n."<script src='" .hu."textpattern/index.php?sed_resources=sed_sf_write_js' type='text/javascript'></script>".n;
 	}
 
 
@@ -339,19 +362,45 @@ function _sed_sf_inject_into_write( $page )
 #===============================================================================
 #	Javascript resources...
 #===============================================================================
-function _sed_sf_js()
+function _sed_sf_js_headers()
 	{
-	$debug = false;
 	while( @ob_end_clean() );
 	header( "Content-Type: text/javascript; charset=utf-8" );
 	header( "Expires: ".date("r", time()+3600) );
 	header( "Cache-Control: public" );
-	if( $debug )
+	}
+
+function sed_sf_section_js()
+	{
+	_sed_sf_js_headers();
+	$max = _sed_sf_get_max_field_number();
+
+	echo <<<js
+	var _sed_cf_max = $max;
+	function _sed_sf_showall(section)
 		{
-		readfile( dirname(__FILE__) . '/sed_sf.js' );
+		for( x = 1; x <= _sed_cf_max ; x++ )
+			{
+			var name = "input[@name='" + section + '_cf_' + x + "_visible']:nth(0)";
+			$(name).attr("checked","checked");
+			}
 		}
-	else
+
+	function _sed_sf_hideall(section)
 		{
+		for( x = 1; x <= _sed_cf_max ; x++ )
+			{
+			var name = "input[@name='" + section + '_cf_' + x + "_visible']:nth(1)";
+			$(name).attr("checked","checked");
+			}
+		}
+js;
+	exit();
+	}
+
+function sed_sf_write_js()
+	{
+	_sed_sf_js_headers();
 		$c = _sed_sf_get_cf_char();
 		$max = _sed_sf_get_max_field_number();
 		echo <<<js
@@ -394,7 +443,6 @@ function _sed_sf_js()
 					}
 				);
 js;
-		}
 	exit();
 	}
 

@@ -85,8 +85,12 @@ function _sed_sf_get_max_field_number()
 
 	if( !isset( $max ) )
 		{
-		if( is_callable( 'glz_custom_fields_MySQL' ) )
-			$max = (int)count( glz_custom_fields_MySQL("all") );
+		if( is_callable( 'glz_all_custom_fields' ) )
+			{
+			$result = glz_all_custom_fields();
+			$max = count( $result );
+			unset( $result );
+			}
 		else
 			$max = 10;
 		}
@@ -391,7 +395,7 @@ function _sed_sf_inject_into_write( $page )
 			$prefs = get_prefs();
 
 		$_sed_sf_static_sections = array();
-		_sed_sf_for_each_section_cb( '_sed_sf_build_static_section_list' , &$_sed_sf_static_sections );
+		_sed_sf_for_each_section_cb( '_sed_sf_build_static_section_list' );
 		if( count( $_sed_sf_static_sections ) )
 			{
 			foreach( $_sed_sf_static_sections as $section )

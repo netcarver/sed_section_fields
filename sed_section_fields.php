@@ -533,6 +533,7 @@ h3. v0.3
   them to be turned on or off with one click (but still, don't forget to save your change!)
 * Now allows sections to be marked as 'static' for exclusion from the write tab's section select list.
 * Depends upon sed_plugin_lib for MLP support and compact storage format (thanks Dale.)
+* Fixed Dale's 20 custom field limit with glz_custom_fields.
 * Using jQuery -- should now work on IE
 
 h3. v0.2

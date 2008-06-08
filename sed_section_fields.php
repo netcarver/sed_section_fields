@@ -89,6 +89,14 @@ function _sed_sf_get_max_field_number()
 			{
 			$result = glz_all_custom_fields();
 			$max = count( $result );
+
+			#
+			#	Account for non-consecutive glz_cf's that might have been deleted
+			# This is done by reading the index of the last glz_cf...
+			#
+			$max = (int)substr( $result[$max - 1]['custom_set'], 7, 2 );
+			if( $max < 10 )
+				$max = 10;
 			unset( $result );
 			}
 		else

@@ -261,7 +261,7 @@ function _sed_sf_inject_section_admin( $page )
 
 			$r .= $showhideall.n.'<tr><td colspan="2"></td></tr>'.n;
 
-			# TODO: Insert row to control visibility of this section in the write-tab section selector
+			# Insert row to control visibility of this section in the write-tab section selector
 			$ss = $data_array['ss'];
 			$r .= '<tr><td class="noline" style="text-align: right; vertical-align: middle;">'.$mlp->gTxt('hide_section').'</td><td class="noline">';
 			$r .= yesnoradio( 'hide_'.$name.'_ss' , ($ss[0]) ? $ss[0] : '0' );
@@ -290,15 +290,17 @@ function _sed_sf_update_section_field_data()
 	#
 	global $prefs;
 
-	$section    = gps( 'name' );
+	$save_as = $section = gps( 'name' );
 	$oldsection = gps( 'old_name' );
 	$data = '';
 
 	# renamed section?
-	if( $section !== $oldsection )
+	if( $section != $oldsection )
 		{
 		$oldkey = doSlash( _sed_sf_make_section_key( $oldsection ) );
 		safe_delete('txp_prefs', "`name`='$oldkey'");
+		if( $oldsection != '' )
+			$section = $oldsection;
 		}
 
 	# Handle custom field visibility...
@@ -315,7 +317,7 @@ function _sed_sf_update_section_field_data()
 	# Handle static section marker...
 	$data .= _sed_sf_ps_extract( $section , 'ss' );
 
-	_sed_sf_store_data( $section , $data );
+	_sed_sf_store_data( $save_as , $data );
 	}
 
 
@@ -527,7 +529,7 @@ h2. Upgrading from version 2
 If you are updating for the first time from v2 to v3 (or higher) of this plugin then you
 will need to upgrade the section_field preferences by following <a href="/textpattern/index.php?sed_resources=update_data_format" rel="nofollow">this link to upgrade the data.</a>
 
-If the link doesn't work for you and you are running on a localhost server configuration, you could try typing the following into your browser to try to force an update...
+If the link doesn't work for you and you are running on a localhost server configuration, you can *try* typing the following into your browser to try to force an update...
 http://localhost/your-site-name-here/textpattern/index.php?sed_resources=update_data_format
 
 Change 'your-site-name-here' to the name of your local site.
@@ -538,11 +540,13 @@ h2(#changelog). Change Log
 h3. v0.3
 
 * Adds a "Show all" and "Hide all" link under custom field lists to allow all of
-  them to be turned on or off with one click (but still, don't forget to save your change!)
+  them to be turned on or off with one click (don't forget to save your change!)
 * Now allows sections to be marked as 'static' for exclusion from the write tab's section select list.
 * Depends upon sed_plugin_lib for MLP support and compact storage format (thanks Dale.)
-* Fixed Dale's 20 custom field limit with glz_custom_fields.
-* Using jQuery -- should now work on IE
+* Bugfix: Removed limit of 20 custom fields with glz_custom_fields (thanks Dale.)
+* Bugfix: Creating new sections now shows the custom controls.
+* Bugfix: Renaming a section now preserves existing sed_sf data.
+* Using jQuery -- should now work on IE.
 
 h3. v0.2
 

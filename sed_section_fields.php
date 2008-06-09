@@ -12,7 +12,7 @@ if( !empty( $revision ) )
 	}
 
 $plugin['name'] = 'sed_section_fields';
-$plugin['version'] = '0.3' . $revision;
+$plugin['version'] = '0.4' . $revision;
 $plugin['author'] = 'Netcarver';
 $plugin['author_uri'] = 'http://txp-plugins.netcarving.com';
 $plugin['description'] = 'Provides admin interface field customisation on a per-section basis.';
@@ -27,6 +27,8 @@ global $_sed_sf_using_glz_custom_fields;
 
 @require_plugin('sed_plugin_library');
 
+if( !defined('sed_sf_prefs_key') )
+	define( 'sed_sf_prefs_key' , 'sed_sf-alter_section_tab' );
 #===============================================================================
 #	Strings for internationalisation...
 #===============================================================================
@@ -37,6 +39,7 @@ $_sed_sf_l18n = array(
 	'hide_section'			=> 'Treat as a static section?',
 	'hide_all_text'			=> 'Hide all?',
 	'show_all_text'			=> 'Show all?',
+	'alter_section_tab'		=> 'Alter Presentation > Section tab?',
 	);
 
 
@@ -48,7 +51,7 @@ if( @txpinterface === 'admin' )
 	add_privs('sed_sf' , '1,2,3,4,5,6');
 	add_privs('sed_sf.static_sections', '1' );	# which users always see all sections in the write-tab select box
 
-	global $_sed_sf_using_glz_custom_fields;
+	global $_sed_sf_using_glz_custom_fields , $prefs, $textarray , $_sed_sf_l18n;
 	$_sed_sf_using_glz_custom_fields = load_plugin('glz_custom_fields');
 
 	register_callback( '_sed_sf_handle_article_pre' ,  'article' , '' , 1 );
@@ -78,6 +81,17 @@ if( @txpinterface === 'admin' )
 		default:
 			break;
 		}
+
+	# Add control variable for section tab changes...
+	if( !array_key_exists( sed_sf_prefs_key , $prefs) )
+		{
+		set_pref( sed_sf_prefs_key , '0' , 'sed_sf' , 1 , 'yesnoradio' );
+		$prefs[sed_sf_prefs_key] = '1';
+		}
+
+	# Insert the string for non-mlp sites...
+	if( !array_key_exists( sed_sf_prefs_key , $textarray ) )
+		$textarray[sed_sf_prefs_key] = $_sed_sf_l18n['alter_section_tab'];
 	}
 
 function _sed_sf_get_max_field_number()
@@ -195,6 +209,7 @@ function _sed_sf_ps_extract( $section , $key )
 function _sed_sf_handle_section_post( $event , $step )
 	{
 	echo n."<script src='" .hu."textpattern/index.php?sed_resources=sed_sf_section_js' type='text/javascript'></script>".n;
+	_sed_sf_css();
 	}
 
 function _sed_sf_inject_section_admin( $page )
@@ -203,7 +218,7 @@ function _sed_sf_inject_section_admin( $page )
 	#	Inserts the name text inputs into each sections' edit controls
 	# current implementation uses output buffer...
 	#
-	global $DB , $prefs , $_sed_sf_l18n;
+	global $DB , $prefs , $_sed_sf_l18n , $step;
 
 	if( !isset( $DB ) )
 		$DB = new db;
@@ -214,6 +229,7 @@ function _sed_sf_inject_section_admin( $page )
 	$mlp = new sed_lib_mlp( 'sed_section_fields' , $_sed_sf_l18n );
 
 	$write_tab_header = $mlp->gTxt( 'write_tab_heading' );
+	$section_index = '';
 
 	$rows = safe_rows_start( '*' , 'txp_section' , "name != 'default' order by name" );
 	$c = @mysql_num_rows($rows);
@@ -224,6 +240,9 @@ function _sed_sf_inject_section_admin( $page )
 			$name  = $row['name'];
 			$title = $row['title'];
 			$title = strtr( $title , array( "'"=>'&#39;' , '"'=>'&#34;' ) );
+
+			# Build the list of sections for the section-tab index
+			$section_index .= '<li><a href="#section-'.$name.'" class="sed_sf_hide_all_but_one">'.$title.'</a></li>';
 
 			$data = _sed_sf_get_data( $name );
 			$data_array = sed_lib_extract_name_value_pairs( $data );
@@ -270,6 +289,19 @@ function _sed_sf_inject_section_admin( $page )
 			$r .= n.'<tr><td colspan="2"></td></tr>'.n.n;
 			$page = str_replace( $f , $f.$r , $page );
 			}
+
+		#
+		#	Insert a JS variable holding the index of sections...
+		#
+		$newsection = '';
+		if( $step == 'section_create' || $step == 'section_save' )
+			$newsection = ps('name');
+
+		$section_index = '<div id="sed_sf_section_index_div"><ul id="sed_sf_section_index" class="sed_sf_section_index"><li><a href="#section-default" class="sed_sf_hide_all_but_one">Default</a></li>'.$section_index.'</ul></div>';
+		$section_index = str_replace('"', '\"', $section_index);
+		$r = '<script type=\'text/javascript\'> var sed_sf_new_section = "#section-'.$newsection.'"; var sed_sf_section_index = "'.$section_index.'"</script>';
+		$f = '<script src=\''.hu.'textpattern/index.php?sed_resources=sed_sf_section_js\' type=\'text/javascript\'></script>';
+		$page = str_replace( $f , $r.n.$f , $page );
 		}
 
 	return $page;
@@ -419,7 +451,26 @@ function _sed_sf_inject_into_write( $page )
 	return $page;
 	}
 
-
+#===============================================================================
+#	CSS resources...
+#===============================================================================
+function _sed_sf_css()
+	{
+	echo <<<css
+		<style>
+		div#sed_sf_section_index_div {
+		float: left;
+		margin: 2em;
+		margin-top: 0;
+		border-right: 1px solid #ccc;
+		padding: 20px 20px 20px 0;
+		}
+		div#sed_sf_section_index_div ul {
+		margin: 2em 0;
+		}
+		</style>
+css;
+	}
 
 #===============================================================================
 #	Javascript resources...
@@ -434,6 +485,8 @@ function _sed_sf_js_headers()
 
 function _sed_sf_section_js()
 	{
+	global $prefs;
+
 	_sed_sf_js_headers();
 	$max = _sed_sf_get_max_field_number();
 
@@ -448,6 +501,56 @@ function _sed_sf_section_js()
 			$(name).attr("checked","checked");
 			}
 		}
+js;
+
+	if( $prefs[sed_sf_prefs_key] == '1' )
+	echo <<<js
+	/*
+	Idea based on "hide all except one" jQuery code by charles stuart...
+	*/
+	function hideAllExcept(el)
+		{
+		$('table#list>tbody>tr').hide();
+		$('table#list tr' + el).show();
+		}
+
+	$(document).ready
+		(
+		function()
+			{
+			// Insert index of sections...
+			$("#list").before( sed_sf_section_index );
+
+			// Insert an #section-Default to the row containing the Default form...
+			var row = $('table#list>tbody>tr:nth-child(2)');
+			row.attr( "id" , "section-default" );
+
+			var replace_point = $('#sed_sf_section_index');
+
+			// Move the h1 from the table to the index...
+			var source = $('table#list>tbody>tr:first>td:first');
+			replace_point.before( source.html() );
+
+			// Add click handlers that show only that section's row..
+			$('a.sed_sf_hide_all_but_one').click
+				(
+				function()
+					{
+					var href = $(this).attr('href');
+					//var href = $(this).attr('title');
+					hideAllExcept(href);
+					}
+				);
+
+			if( sed_sf_new_section == '#section-' )
+				sed_sf_new_section = window.location.hash;
+
+			if( sed_sf_new_section == '' )
+				sed_sf_new_section = '#section-default';
+
+			hideAllExcept(sed_sf_new_section);
+			}
+		);
 js;
 	exit();
 	}
@@ -536,6 +639,10 @@ Change 'your-site-name-here' to the name of your local site.
 
 
 h2(#changelog). Change Log
+
+h3. v0.4
+
+* Adds new layout for "Presentation > Section" tab. You can turn the new layout on and off from the "Admin > Prefs > Advanced" page. Look for the *sed_sf* preferences towards the bottom of the screen.
 
 h3. v0.3
 

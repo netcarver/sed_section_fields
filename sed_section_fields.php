@@ -541,7 +541,7 @@ h3. v0.3
 
 * Adds a "Show all" and "Hide all" link under custom field lists to allow all of
   them to be turned on or off with one click (don't forget to save your change!)
-* Now allows sections to be marked as 'static' for exclusion from the write tab's section select list.
+* Now allows sections to be marked as 'static' for exclusion from the write tab's section select list *for non-publishers*.
 * Depends upon sed_plugin_lib for MLP support and compact storage format (thanks Dale.)
 * Bugfix: Removed limit of 20 custom fields with glz_custom_fields (thanks Dale.)
 * Bugfix: Creating new sections now shows the custom controls.

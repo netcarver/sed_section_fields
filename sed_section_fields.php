@@ -17,6 +17,7 @@ $plugin['author'] = 'Netcarver';
 $plugin['author_uri'] = 'http://txp-plugins.netcarving.com';
 $plugin['description'] = 'Provides admin interface field customisation on a per-section basis.';
 $plugin['type'] = '1';
+$plugin['order'] = 5;
 
 @include_once('../zem_tpl.php');
 
@@ -214,7 +215,7 @@ function _sed_sf_inject_section_admin( $page )
 
 	$write_tab_header = $mlp->gTxt( 'write_tab_heading' );
 
-	$rows = safe_rows_start( '*' , 'txp_section' , "1=1" );
+	$rows = safe_rows_start( '*' , 'txp_section' , "name != 'default' order by name" );
 	$c = @mysql_num_rows($rows);
 	if( $rows && $c > 0 )
 		{
@@ -279,8 +280,7 @@ function _sed_sf_section_markup( $event , $step )
 	if( $step == 'section_save' )
 		_sed_sf_update_section_field_data();
 
-	if( $step == '' || $step == 'section_save' )
-		ob_start( '_sed_sf_inject_section_admin' );
+	ob_start( '_sed_sf_inject_section_admin' );
 	}
 
 function _sed_sf_update_section_field_data()

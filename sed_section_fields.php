@@ -521,13 +521,13 @@ js;
 			// Insert index of sections...
 			$("#list").before( sed_sf_section_index );
 
-			// Insert an #section-Default to the row containing the Default form...
+			// Insert an #section-default id into the row containing the Default form...
 			var row = $('table#list>tbody>tr:nth-child(2)');
 			row.attr( "id" , "section-default" );
 
 			var replace_point = $('#sed_sf_section_index');
 
-			// Move the h1 from the table to the index...
+			// Move the h1 and create form from the table to the index...
 			var source = $('table#list>tbody>tr:first>td:first');
 			replace_point.before( source.html() );
 
@@ -537,18 +537,17 @@ js;
 				function()
 					{
 					var href = $(this).attr('href');
-					//var href = $(this).attr('title');
 					hideAllExcept(href);
 					}
 				);
 
-			if( sed_sf_new_section == '#section-' )
+			//	Setup initial state of the section table...
+			if( sed_sf_new_section == '#section-' )	// New section
 				sed_sf_new_section = window.location.hash;
-
-			if( sed_sf_new_section == '' )
+			if( sed_sf_new_section == '' )				// No section so show default
 				sed_sf_new_section = '#section-default';
-
 			hideAllExcept(sed_sf_new_section);
+			window.scrollTo(0,0);
 			}
 		);
 js;

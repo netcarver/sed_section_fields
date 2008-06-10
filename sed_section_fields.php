@@ -244,7 +244,7 @@ function _sed_sf_inject_section_admin( $page )
 			$title = strtr( $title , array( "'"=>'&#39;' , '"'=>'&#34;' ) );
 
 			# Build the list of sections for the section-tab index
-			$section_index .= '<li><a href="#section-'.$name.'" class="sed_sf_hide_all_but_one">'.$title.'</a></li>';
+			$section_index .= '<li><a href="#section-'.$name.'" class="sed_sf_hide_all_but_one">'.$name.'</a></li>';
 
 			$data = _sed_sf_get_data( $name );
 			$data_array = sed_lib_extract_name_value_pairs( $data );
@@ -299,7 +299,7 @@ function _sed_sf_inject_section_admin( $page )
 		if( $step == 'section_create' || $step == 'section_save' )
 			$newsection = ps('name');
 
-		$section_index = '<div id="sed_sf_section_index_div"><ul id="sed_sf_section_index" class="sed_sf_section_index"><li><a href="#section-default" class="sed_sf_hide_all_but_one">Default</a></li>'.$section_index.'</ul></div>';
+		$section_index = '<div id="sed_sf_section_index_div"><ul id="sed_sf_section_index" class="sed_sf_section_index"><li><a href="#section-default" class="sed_sf_hide_all_but_one">default</a></li>'.$section_index.'</ul></div>';
 		$section_index = str_replace('"', '\"', $section_index);
 		$r = '<script type=\'text/javascript\'> var sed_sf_new_section = "#section-'.$newsection.'"; var sed_sf_section_index = "'.$section_index.'"</script>';
 		$f = '<script src=\''.hu.'textpattern/index.php?sed_resources=sed_sf_section_js\' type=\'text/javascript\'></script>';
@@ -467,7 +467,7 @@ function _sed_sf_css()
 		border-right: 1px solid #ccc;
 		padding: 20px 20px 20px 0;
 		}
-		div#sed_sf_section_index_div ul {
+		div#sed_sf_section_index_div ul , div#sed_sf_section_index_div ol {
 		margin: 2em 0;
 		}
 		</style>

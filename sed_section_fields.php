@@ -510,7 +510,7 @@ js;
 	/*
 	Idea based on "hide all except one" jQuery code by charles stuart...
 	*/
-	function hideAllExcept(el)
+	function sed_sf_hide_all_but_one(el)
 		{
 		$('table#list>tbody>tr').hide();
 		$('table#list tr' + el).show();
@@ -539,7 +539,7 @@ js;
 				function()
 					{
 					var href = $(this).attr('href');
-					hideAllExcept(href);
+					sed_sf_hide_all_but_one(href);
 					}
 				);
 
@@ -548,7 +548,7 @@ js;
 				sed_sf_new_section = window.location.hash;
 			if( sed_sf_new_section == '' )				// No section so show default
 				sed_sf_new_section = '#section-default';
-			hideAllExcept(sed_sf_new_section);
+			sed_sf_hide_all_but_one(sed_sf_new_section);
 			//window.scrollTo(0,0); // Doesn't align exactly on save but gives access to nav withouth scrolling up
 			window.location.hash = sed_sf_new_section;
 			}

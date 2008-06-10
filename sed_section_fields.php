@@ -329,7 +329,7 @@ function _sed_sf_inject_section_admin( $page )
 		if( !is_numeric( $limit ) )
 			$limit = 18;
 		if( $c >= $limit )
-			$filter = '<label for="sed_sf_section_index_filter">'.$mlp->gTxt('filter_label').'</label><br /><input id="sed_sf_section_index_filter" type="text" />';
+			$filter = '<label for="sed_sf_section_index_filter">'.$mlp->gTxt('filter_label').'</label><br /><input id="sed_sf_section_index_filter" type="text" class="edit" />';
 
 		$section_index =	'<div id="sed_sf_section_index_div">'.
 							'<form id="sed_sf_filter_form">'.$filter.'</form>'.
@@ -507,6 +507,9 @@ function _sed_sf_css()
 		}
 		div#sed_sf_section_index_div ul , div#sed_sf_section_index_div ol {
 		margin: 2em 0;
+		}
+		form#sed_sf_filter_form {
+		margin-top: 1em;
 		}
 		</style>
 css;

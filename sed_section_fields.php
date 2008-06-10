@@ -36,7 +36,7 @@ global $_sed_sf_l18n;
 $_sed_sf_l18n = array(
 	'write_tab_heading' 	=> 'Write Tab Fields...',
 	'hide_cf' 				=> 'Hide "{global_label}" (cf#{cfnum}) ?',
-	'hide_section'			=> 'Treat as a static section?',
+	'hide_section'			=> 'Hide from non-publishers?',
 	'hide_all_text'			=> 'Hide all?',
 	'show_all_text'			=> 'Show all?',
 	'alter_section_tab'		=> 'Alter Presentation > Section tab?',
@@ -88,6 +88,8 @@ if( @txpinterface === 'admin' )
 		set_pref( sed_sf_prefs_key , '0' , 'sed_sf' , 1 , 'yesnoradio' );
 		$prefs[sed_sf_prefs_key] = '1';
 		}
+
+	$mlp = new sed_lib_mlp( 'sed_section_fields' , $_sed_sf_l18n , '' , 'admin' );
 
 	# Insert the string for non-mlp sites...
 	if( !array_key_exists( sed_sf_prefs_key , $textarray ) )
@@ -226,7 +228,7 @@ function _sed_sf_inject_section_admin( $page )
 	if( !isset( $prefs ) )
 		$prefs = get_prefs();
 
-	$mlp = new sed_lib_mlp( 'sed_section_fields' , $_sed_sf_l18n );
+	$mlp = new sed_lib_mlp( 'sed_section_fields' , $_sed_sf_l18n , '' , 'admin' );
 
 	$write_tab_header = $mlp->gTxt( 'write_tab_heading' );
 	$section_index = '';

@@ -707,6 +707,7 @@ h2(#changelog). Change Log
 h3. v0.4
 
 * Adds new layout for "Presentation > Section" tab. You can turn the new layout on and off from the "Admin > Prefs > Advanced" page. Look for the *sed_sf* preferences towards the bottom of the screen.
+* Adds a "live" filter to the section index on the new section tab. *NB* This will only appear once the limit specified in "Admin > Prefs > Advanced > sed_sf" is exceeded.
 
 h3. v0.3
 

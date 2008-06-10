@@ -27,8 +27,9 @@ global $_sed_sf_using_glz_custom_fields;
 
 @require_plugin('sed_plugin_library');
 
-if( !defined('sed_sf_prefs_key') )
-	define( 'sed_sf_prefs_key' , 'sed_sf-alter_section_tab' );
+if( !defined('sed_sf_prefix') )
+	define( 'sed_sf_prefix' , 'sed_sf' );
+
 #===============================================================================
 #	Strings for internationalisation...
 #===============================================================================
@@ -40,9 +41,18 @@ $_sed_sf_l18n = array(
 	'hide_all_text'			=> 'Hide all?',
 	'show_all_text'			=> 'Show all?',
 	'alter_section_tab'		=> 'Alter Presentation > Section tab?',
+	'filter_label'			=> 'Filter&#8230;',
+	'filter_limit'			=> 'Show section index filter after how many sections?',
 	);
-
-
+#===============================================================================
+#	Plugin preferences...
+#===============================================================================
+global $sed_sf_prefs;
+$sed_sf_prefs = array
+	(
+	'alter_section_tab'	=> array( 'type'=>'yesnoradio' , 'val'=>'0' ) ,
+	'filter_limit' 		=> array( 'type'=>'text_input' , 'val'=>'18' ) ,
+	);
 #===============================================================================
 #	Admin interface features...
 #===============================================================================
@@ -51,7 +61,7 @@ if( @txpinterface === 'admin' )
 	add_privs('sed_sf' , '1,2,3,4,5,6');
 	add_privs('sed_sf.static_sections', '1' );	# which users always see all sections in the write-tab select box
 
-	global $_sed_sf_using_glz_custom_fields , $prefs, $textarray , $_sed_sf_l18n;
+	global $_sed_sf_using_glz_custom_fields , $prefs, $textarray , $_sed_sf_l18n , $sed_sf_prefs;
 	$_sed_sf_using_glz_custom_fields = load_plugin('glz_custom_fields');
 
 	register_callback( '_sed_sf_handle_article_pre' ,  'article' , '' , 1 );
@@ -82,18 +92,12 @@ if( @txpinterface === 'admin' )
 			break;
 		}
 
-	# Add control variable for section tab changes...
-	if( !array_key_exists( sed_sf_prefs_key , $prefs) )
-		{
-		set_pref( sed_sf_prefs_key , '0' , 'sed_sf' , 1 , 'yesnoradio' );
-		$prefs[sed_sf_prefs_key] = '1';
-		}
-
+	// Register the plugin and its strings...
 	$mlp = new sed_lib_mlp( 'sed_section_fields' , $_sed_sf_l18n , '' , 'admin' );
 
-	# Insert the string for non-mlp sites...
-	if( !array_key_exists( sed_sf_prefs_key , $textarray ) )
-		$textarray[sed_sf_prefs_key] = $_sed_sf_l18n['alter_section_tab'];
+	// Install preferences...
+	foreach( $sed_sf_prefs as $key=>$data )
+		_sed_sf_install_pref( $key , $data['val'] , $data['type'] );
 	}
 
 function _sed_sf_get_max_field_number()
@@ -136,6 +140,27 @@ function _sed_sf_get_cf_char()
 #===============================================================================
 #	Data access routines...
 #===============================================================================
+function _sed_sf_prefix_key($key)
+	{
+	return sed_sf_prefix.'-'.$key;
+	}
+function _sed_sf_install_pref($key,$value,$type)
+	{
+	global $prefs , $textarray , $_sed_sf_l18n;
+	$k = _sed_sf_prefix_key( $key );
+	if( !array_key_exists( $k , $prefs ) )
+		{
+		set_pref( $k , $value , sed_sf_prefix , 1 , $type );
+		$prefs[$k] = $value;
+		}
+	# Insert the preference strings for non-mlp sites...
+	if( !array_key_exists( $k , $textarray ) )
+		$textarray[$k] = $_sed_sf_l18n[$key];
+	}
+function _sed_sf_remove_prefs()
+	{
+	safe_delete( 'txp_prefs' , "`event`='".sed_sf_prefix."'" );
+	}
 function _sed_sf_make_section_key( $section )
 	{
 	return 'sed_sf_' . $section . '_field_labels';
@@ -505,7 +530,7 @@ function _sed_sf_section_js()
 		}
 js;
 
-	if( $prefs[sed_sf_prefs_key] == '1' )
+	if( $prefs[_sed_sf_prefix_key('alter_section_tab')] == '1' )
 	echo <<<js
 	/*
 	Idea based on "hide all except one" jQuery code by charles stuart...

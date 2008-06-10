@@ -549,8 +549,8 @@ js;
 			if( sed_sf_new_section == '' )				// No section so show default
 				sed_sf_new_section = '#section-default';
 			hideAllExcept(sed_sf_new_section);
-			//window.scrollTo(0,89); // This aligns exactly on save -- but obscures the main navigation tabs
-			window.scrollTo(0,0); // Doesn't align exactly on save but gives access to nav withouth scrolling up
+			//window.scrollTo(0,0); // Doesn't align exactly on save but gives access to nav withouth scrolling up
+			window.location.hash = sed_sf_new_section;
 			}
 		);
 js;

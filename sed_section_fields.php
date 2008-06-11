@@ -43,6 +43,7 @@ $_sed_sf_l18n = array(
 	'alter_section_tab'		=> 'Alter Presentation > Section tab?',
 	'filter_label'			=> 'Filter&#8230;',
 	'filter_limit'			=> 'Show section index filter after how many sections?',
+	'hide'					=> 'Hide',
 	);
 #===============================================================================
 #	Plugin preferences...
@@ -239,13 +240,37 @@ function _sed_sf_handle_section_post( $event , $step )
 	_sed_sf_css();
 	}
 
+global $mlp;
+
+function _sed_sf_showhide_radio($field, $var, $tabindex = '', $id = '')
+	{
+	global $mlp;
+
+	$id = ($id) ? $id.'-'.$field : $field;
+
+	$vals = array(
+		'0' => gTxt('show'),
+		'1' => $mlp->gTxt('hide')
+	);
+
+	foreach ($vals as $a => $b)
+		{
+		$out[] = '<input type="radio" id="'.$id.'-'.$a.'" name="'.$field.'" value="'.$a.'" class="radio"';
+		$out[] = ($a == $var) ? ' checked="checked"' : '';
+		$out[] = ($tabindex) ? ' tabindex="'.$tabindex.'"' : '';
+		$out[] = ' /><label for="'.$id.'-'.$a.'">'.$b.'</label> ';
+		}
+
+	return join('', $out);
+	}
+
 function _sed_sf_inject_section_admin( $page )
 	{
 	#
 	#	Inserts the name text inputs into each sections' edit controls
 	# current implementation uses output buffer...
 	#
-	global $DB , $prefs , $_sed_sf_l18n , $step;
+	global $DB , $prefs , $_sed_sf_l18n , $step , $mlp;
 
 	if( !isset( $DB ) )
 		$DB = new db;
@@ -294,7 +319,7 @@ function _sed_sf_inject_section_admin( $page )
 					#	Only bother showing the show/hide radio buttons if the global field label exists.
 					$count += 1;
 					$r .= '<tr><td class="noline" style="text-align: right; vertical-align: middle;">' . $label . '</td><td class="noline">';
-					$r .= yesnoradio( $name.'_cf_'.$x.'_visible' , $value , '' , $field_name );
+					$r .= _sed_sf_showhide_radio( $name.'_cf_'.$x.'_visible' , $value , '' , $field_name );
 					if( $count === 2 )
 						{
 						$showhideall = '<tr><td colspan="2" class="noline" style="text-align: right; vertical-align: middle;">';
@@ -310,7 +335,7 @@ function _sed_sf_inject_section_admin( $page )
 			# Insert row to control visibility of this section in the write-tab section selector
 			$ss = $data_array['ss'];
 			$r .= '<tr><td class="noline" style="text-align: right; vertical-align: middle;">'.$mlp->gTxt('hide_section').'</td><td class="noline">';
-			$r .= yesnoradio( 'hide_'.$name.'_ss' , ($ss[0]) ? $ss[0] : '0' );
+			$r .= _sed_sf_showhide_radio( 'hide_'.$name.'_ss' , ($ss[0]) ? $ss[0] : '0' );
 			$r .= '</td></tr>'.n;
 
 			$r .= n.'<tr><td colspan="2"></td></tr>'.n.n;

@@ -36,7 +36,7 @@ if( !defined('sed_sf_prefix') )
 global $_sed_sf_l18n;
 $_sed_sf_l18n = array(
 	'write_tab_heading' 	=> 'Write Tab Fields...',
-	'hide_cf' 				=> 'Hide "{global_label}" (cf#{cfnum}) ?',
+	'hide_cf' 				=> '{global_label} (#{cfnum})',
 	'hide_section'			=> 'Hide from non-publishers?',
 	'hide_all_text'			=> 'Hide all?',
 	'show_all_text'			=> 'Show all?',
@@ -364,7 +364,7 @@ function _sed_sf_inject_section_admin( $page )
 							'</ol>'.
 							'</div>';
 		$section_index = str_replace('"', '\"', $section_index);
-		$r = '<script type=\'text/javascript\'> var sed_sf_new_section = "#section-'.$newsection.'"; var sed_sf_section_index = "'.$section_index.'"</script>';
+		$r = '<script type=\'text/javascript\'> var sed_sf_new_section = "#section-'.$newsection.'"; var sed_sf_section_index = "'.$section_index.'";</script>';
 		$f = '<script src=\''.hu.'textpattern/index.php?sed_resources=sed_sf_section_js\' type=\'text/javascript\'></script>';
 		$page = str_replace( $f , $r.n.$f , $page );
 		}

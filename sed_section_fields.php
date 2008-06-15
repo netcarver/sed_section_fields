@@ -324,7 +324,7 @@ function _sed_sf_inject_section_admin( $page )
 					if( $count === 2 )
 						{
 						$showhideall = '<tr><td colspan="2" class="noline" style="text-align: right; vertical-align: middle;">';
-						$showhideall .= '<a onclick="_sed_sf_showhideall(\''.$name.'\',\'0\')">'.$mlp->gTxt('show_all_text').'</a> / <a onclick="_sed_sf_showhideall(\''.$name.'\',\'1\')">'.$mlp->gTxt('hide_all_text').'</a>';
+						$showhideall .= '<a class="sed_sf_normal" onclick="_sed_sf_showhideall(\''.$name.'\',\'0\')">'.$mlp->gTxt('show_all_text').'</a> / <a class="sed_sf_normal" onclick="_sed_sf_showhideall(\''.$name.'\',\'1\')">'.$mlp->gTxt('hide_all_text').'</a>';
 						$showhideall .= '</td></tr>'.n;
 						}
 					$r .= '</td></tr>'.n;
@@ -536,6 +536,9 @@ function _sed_sf_css()
 		}
 		form#sed_sf_filter_form {
 		margin-top: 1em;
+		}
+		.sed_sf_normal {
+		cursor: default;
 		}
 		</style>
 css;

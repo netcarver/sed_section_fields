@@ -44,6 +44,7 @@ $_sed_sf_l18n = array(
 	'filter_label'			=> 'Filter&#8230;',
 	'filter_limit'			=> 'Show section index filter after how many sections?',
 	'hide'					=> 'Hide',
+	'show'					=> 'Show',
 	);
 #===============================================================================
 #	Plugin preferences...
@@ -249,7 +250,7 @@ function _sed_sf_showhide_radio($field, $var, $tabindex = '', $id = '')
 	$id = ($id) ? $id.'-'.$field : $field;
 
 	$vals = array(
-		'0' => gTxt('show'),
+		'0' => $mlp->gTxt('show'),
 		'1' => $mlp->gTxt('hide')
 	);
 

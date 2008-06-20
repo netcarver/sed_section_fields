@@ -258,22 +258,13 @@ function _sed_sf_showhide_radio($field, $var, $tabindex = '', $id = '')
 	{
 	global $mlp;
 
-	$id = ($id) ? $id.'-'.$field : $field;
-
-	$vals = array(
+	$vals = array
+		(
 		'0' => $mlp->gTxt('show'),
 		'1' => $mlp->gTxt('hide')
-	);
+		);
 
-	foreach ($vals as $a => $b)
-		{
-		$out[] = '<input type="radio" id="'.$id.'-'.$a.'" name="'.$field.'" value="'.$a.'" class="radio"';
-		$out[] = ($a == $var) ? ' checked="checked"' : '';
-		$out[] = ($tabindex) ? ' tabindex="'.$tabindex.'"' : '';
-		$out[] = ' /><label for="'.$id.'-'.$a.'">'.$b.'</label> ';
-		}
-
-	return join('', $out);
+	return sed_lib_radio_set( $vals , $field , $var , $tabindex , $id );
 	}
 
 function _sed_sf_inject_section_admin( $page )

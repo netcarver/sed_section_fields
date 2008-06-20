@@ -93,10 +93,12 @@ $sed_sf_prefs = array
 	switch(gps('sed_resources') )
 		{
 		case 'sed_sf_write_js':
+			require_privs( 'article' );
 			_sed_sf_write_js();
 			break;
 
 		case 'sed_sf_section_js':
+			require_privs( 'section' );
 			_sed_sf_section_js();
 			break;
 

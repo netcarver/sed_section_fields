@@ -23,17 +23,24 @@ $plugin['order'] = 5;
 
 # --- BEGIN PLUGIN CODE ---
 
-global $_sed_sf_using_glz_custom_fields;
-
 @require_plugin('sed_plugin_library');
 
 if( !defined('sed_sf_prefix') )
 	define( 'sed_sf_prefix' , 'sed_sf' );
 
 #===============================================================================
-#	Strings for internationalisation...
+#	Admin interface features...
 #===============================================================================
-global $_sed_sf_l18n;
+if( @txpinterface === 'admin' )
+	{
+	add_privs('sed_sf', '1,2,3,4,5,6');
+	add_privs('sed_sf.static_sections', '1' );	# which users always see all sections in the write-tab select box
+
+	global $_sed_sf_using_glz_custom_fields , $prefs, $textarray , $_sed_sf_l18n , $sed_sf_prefs , $_sed_sf_field_keys;
+
+	#===========================================================================
+#	Strings for internationalisation...
+	#===========================================================================
 $_sed_sf_l18n = array(
 	'write_tab_heading' 	=> 'Write Tab Fields...',
 	'hide_cf' 				=> '{global_label} (#{cfnum})',
@@ -46,32 +53,43 @@ $_sed_sf_l18n = array(
 	'hide'					=> 'Hide',
 	'show'					=> 'Show',
 	);
-#===============================================================================
+	$mlp = new sed_lib_mlp( 'sed_section_fields' , $_sed_sf_l18n , '' , 'admin' );
+
+	#===========================================================================
 #	Plugin preferences...
-#===============================================================================
-global $sed_sf_prefs;
+	#===========================================================================
 $sed_sf_prefs = array
 	(
 	'alter_section_tab'	=> array( 'type'=>'yesnoradio' , 'val'=>'0' ) ,
 	'filter_limit' 		=> array( 'type'=>'text_input' , 'val'=>'18' ) ,
 	);
-#===============================================================================
-#	Admin interface features...
-#===============================================================================
-if( @txpinterface === 'admin' )
-	{
-	add_privs('sed_sf' , '1,2,3,4,5,6');
-	add_privs('sed_sf.static_sections', '1' );	# which users always see all sections in the write-tab select box
+	foreach( $sed_sf_prefs as $key=>$data )
+		_sed_sf_install_pref( $key , $data['val'] , $data['type'] );
 
-	global $_sed_sf_using_glz_custom_fields , $prefs, $textarray , $_sed_sf_l18n , $sed_sf_prefs;
+	#===========================================================================
+	#	Shorthand for storage in prefs...
+	#===========================================================================
+	$_sed_sf_field_keys = array(
+		'kw'=>'keywords' , 'of'=>'override-form' , 'ai'=>'article-image' , 'uot'=>'url-title'
+		);
+
+	#===========================================================================
+	#	glz_custom_fields present or not?
+	#===========================================================================
 	$_sed_sf_using_glz_custom_fields = load_plugin('glz_custom_fields');
 
+	#===========================================================================
+	#	Textpattern event handlers...
+	#===========================================================================
 	register_callback( '_sed_sf_handle_article_pre' ,  'article' , '' , 1 );
 	register_callback( '_sed_sf_handle_article_post' , 'article' );
 	register_callback( '_sed_sf_handle_section_post' , 'section' );
 	register_callback( '_sed_sf_section_markup' ,      'section' , '' , 1 );
 	register_callback( '_sed_sf_xml_server'     ,      'sed_sf' );
 
+	#===========================================================================
+	#	Serve resource requests...
+	#===========================================================================
 	switch(gps('sed_resources') )
 		{
 		case 'sed_sf_write_js':
@@ -93,13 +111,6 @@ if( @txpinterface === 'admin' )
 		default:
 			break;
 		}
-
-	// Register the plugin and its strings...
-	$mlp = new sed_lib_mlp( 'sed_section_fields' , $_sed_sf_l18n , '' , 'admin' );
-
-	// Install preferences...
-	foreach( $sed_sf_prefs as $key=>$data )
-		_sed_sf_install_pref( $key , $data['val'] , $data['type'] );
 	}
 
 function _sed_sf_get_max_field_number()
@@ -240,8 +251,6 @@ function _sed_sf_handle_section_post( $event , $step )
 	echo n."<script src='" .hu."textpattern/index.php?sed_resources=sed_sf_section_js' type='text/javascript'></script>".n;
 	_sed_sf_css();
 	}
-
-global $mlp;
 
 function _sed_sf_showhide_radio($field, $var, $tabindex = '', $id = '')
 	{
@@ -422,8 +431,6 @@ function _sed_sf_update_section_field_data()
 #===============================================================================
 #	Routines to handle admin content > write tab...
 #===============================================================================
-global $_sed_sf_static_sections;
-
 function _sed_sf_xml_serve_section_data( $event , $step )
 	{
 	$result  = '';

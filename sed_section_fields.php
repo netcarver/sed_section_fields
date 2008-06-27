@@ -443,7 +443,7 @@ function _sed_sf_xml_serve_section_data( $event , $step )
 function _sed_sf_xml_server( $event , $step )
 	{
 	while (@ob_end_clean());
-	header('Content-Type: text/xml; charset=utf-8');
+	header('Content-Type: text/plain; charset=utf-8');
 	header('Cache-Control: private');
 
 	switch( $step )	# step selects among possible content types...

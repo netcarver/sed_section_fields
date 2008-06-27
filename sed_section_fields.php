@@ -39,30 +39,30 @@ if( @txpinterface === 'admin' )
 	global $_sed_sf_using_glz_custom_fields , $prefs, $textarray , $_sed_sf_l18n , $sed_sf_prefs , $_sed_sf_field_keys;
 
 	#===========================================================================
-#	Strings for internationalisation...
+	#	Strings for internationalisation...
 	#===========================================================================
-$_sed_sf_l18n = array(
-	'write_tab_heading' 	=> 'Write Tab Fields...',
-	'hide_cf' 				=> '{global_label} (#{cfnum})',
-	'hide_section'			=> 'Hide from non-publishers?',
-	'hide_all_text'			=> 'Hide all?',
-	'show_all_text'			=> 'Show all?',
-	'alter_section_tab'		=> 'Alter Presentation > Section tab?',
-	'filter_label'			=> 'Filter&#8230;',
-	'filter_limit'			=> 'Show section index filter after how many sections?',
-	'hide'					=> 'Hide',
-	'show'					=> 'Show',
-	);
+	$_sed_sf_l18n = array(
+		'write_tab_heading' 	=> 'Write Tab Fields...',
+		'hide_cf' 				=> '{global_label} (#{cfnum})',
+		'hide_section'			=> 'Hide from non-publishers?',
+		'hide_all_text'			=> 'Hide all?',
+		'show_all_text'			=> 'Show all?',
+		'alter_section_tab'		=> 'Alter Presentation > Section tab?',
+		'filter_label'			=> 'Filter&#8230;',
+		'filter_limit'			=> 'Show section index filter after how many sections?',
+		'hide'					=> 'Hide',
+		'show'					=> 'Show',
+		);
 	$mlp = new sed_lib_mlp( 'sed_section_fields' , $_sed_sf_l18n , '' , 'admin' );
 
 	#===========================================================================
-#	Plugin preferences...
+	#	Plugin preferences...
 	#===========================================================================
-$sed_sf_prefs = array
-	(
-	'alter_section_tab'	=> array( 'type'=>'yesnoradio' , 'val'=>'0' ) ,
-	'filter_limit' 		=> array( 'type'=>'text_input' , 'val'=>'18' ) ,
-	);
+	$sed_sf_prefs = array
+		(
+		'alter_section_tab'	=> array( 'type'=>'yesnoradio' , 'val'=>'0' ) ,
+		'filter_limit' 		=> array( 'type'=>'text_input' , 'val'=>'18' ) ,
+		);
 	foreach( $sed_sf_prefs as $key=>$data )
 		_sed_sf_install_pref( $key , $data['val'] , $data['type'] );
 
@@ -305,7 +305,7 @@ function _sed_sf_inject_section_admin( $page )
 			$f = '<input type="text" name="name" value="' . $name . '" size="20" class="edit" tabindex="1" /></td></tr>'. n.n . '<tr><td class="noline" style="text-align: right; vertical-align: middle;">' . gTxt('section_longtitle') . ': </td><td class="noline"><input type="text" name="title" value="' . $title . '" size="20" class="edit" tabindex="1" /></td></tr>';
 
 			# Insert custom field visibility controls...
-			$cf_names = $data_array['cf'];
+			$cf_names = @$data_array['cf'];
 			$r = n.n.'<tr><td colspan="2">'.$write_tab_header.'</td></tr>'.n;
 			$max = _sed_sf_get_max_field_number();
 			$count = 0;
@@ -336,7 +336,7 @@ function _sed_sf_inject_section_admin( $page )
 			$r .= $showhideall.n.'<tr><td colspan="2"></td></tr>'.n;
 
 			# Insert row to control visibility of this section in the write-tab section selector
-			$ss = $data_array['ss'];
+			$ss = @$data_array['ss'];
 			$r .= '<tr><td class="noline" style="text-align: right; vertical-align: middle;">'.$mlp->gTxt('hide_section').'</td><td class="noline">';
 			$r .= _sed_sf_showhide_radio( 'hide_'.$name.'_ss' , ($ss[0]) ? $ss[0] : '0' );
 			$r .= '</td></tr>'.n;
@@ -578,7 +578,7 @@ js;
 	if( $prefs[_sed_sf_prefix_key('alter_section_tab')] == '1' )
 	echo <<<js
 	/*
-	Idea based on "hide all except one" jQuery code by charles stuart...
+	Idea based on "hide all except one" jQuery code by Charles Stuart...
 	*/
 	function sed_sf_hide_all_but_one(el)
 		{
@@ -740,11 +740,12 @@ h3. v0.4
 
 * Adds new layout for "Presentation > Section" tab. You can turn the new layout on and off from the "Admin > Prefs > Advanced" page. Look for the *sed_sf* preferences towards the bottom of the screen.
 * Adds a "live" filter to the section index on the new section tab. *NB* This will only appear once the limit specified in "Admin > Prefs > Advanced > sed_sf" is exceeded.
+* Bugfix: Error console/IE errors due to a text/xml header being sent for text/plain data.
+* Bugfix: PHP notices (treated as errors in some setups) stop the section tab working.
 
 h3. v0.3
 
-* Adds a "Show all" and "Hide all" link under custom field lists to allow all of
-  them to be turned on or off with one click (don't forget to save your change!)
+* Adds a "Show all" and "Hide all" link under custom field lists to allow all of them to be turned on or off with one click (don't forget to save your change!)
 * Now allows sections to be marked as 'static' for exclusion from the write tab's section select list *for non-publishers*.
 * Depends upon sed_plugin_lib for MLP support and compact storage format (thanks Dale.)
 * Bugfix: Removed limit of 20 custom fields with glz_custom_fields (thanks Dale.)

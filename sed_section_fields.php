@@ -1,18 +1,7 @@
 <?php
 
-$plugin['revision'] = '$LastChangedRevision$';
-
-$revision = @$plugin['revision'];
-if( !empty( $revision ) )
-	{
-	$parts = explode( ' ' , trim( $revision , '$' ) );
-	$revision = $parts[1];
-	if( !empty( $revision ) )
-		$revision = '.' . $revision;
-	}
-
 $plugin['name'] = 'sed_section_fields';
-$plugin['version'] = '0.4' . $revision;
+$plugin['version'] = '0.4';
 $plugin['author'] = 'Netcarver';
 $plugin['author_uri'] = 'http://txp-plugins.netcarving.com';
 $plugin['description'] = 'Provides admin interface field customisation on a per-section basis.';

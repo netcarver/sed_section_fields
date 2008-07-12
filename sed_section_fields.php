@@ -133,10 +133,27 @@ function _sed_sf_get_max_field_number()
 
 function _sed_sf_get_cf_char()
 	{
-	global $_sed_sf_using_glz_custom_fields;
+	static $c = false;
+	
+	if( false === $c )
+		{
+		#	glz_custom_fields present or not?
+		global $_sed_sf_using_glz_custom_fields;
 
-	$c = ( $_sed_sf_using_glz_custom_fields ) ? '_' : '-';
-
+		$c = '-';
+		
+		if( $_sed_sf_using_glz_custom_fields )
+			{
+			#	Now have to check for the change in markup from 1.1.3 to 1.2!			
+			global $plugins_ver;
+			$glz_ver = @$plugins_ver['glz_custom_fields'];
+			
+			if( version_compare( $glz_ver , '1.2' , '<') ) 
+				$c = '_';
+			}
+		}
+	
+	#echo br , 'Cf character [' , $c , ']';
 	return $c;
 	}
 

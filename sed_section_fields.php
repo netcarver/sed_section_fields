@@ -12,7 +12,7 @@ $plugin['order'] = 5;
 
 # --- BEGIN PLUGIN CODE ---
 
-@require_plugin('sed_plugin_library');
+require_plugin('sed_plugin_library');
 
 if( !defined('sed_sf_prefix') )
 	define( 'sed_sf_prefix' , 'sed_sf' );

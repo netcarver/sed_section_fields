@@ -643,47 +643,47 @@ js;
 function _sed_sf_write_js()
 	{
 	_sed_sf_js_headers();
-		$c = _sed_sf_get_cf_char();
-		$max = _sed_sf_get_max_field_number();
-		echo <<<js
-			var _sed_cf_char           = "$c";
-			var _sed_cf_max            = $max;
-			var _sed_sf =
+	$c = _sed_sf_get_cf_char();
+	$max = _sed_sf_get_max_field_number();
+	echo <<<js
+		var _sed_cf_char           = "$c";
+		var _sed_cf_max            = $max;
+		var _sed_sf =
+			{
+			on_section_change : function ( section )
 				{
-				on_section_change : function ( section )
-				{
-					$.get(
-						"../textpattern/index.php?event=sed_sf&step=get_section_data&data-id=cf&section=" + section, {},
-						function(result)
+				$.get(
+					"../textpattern/index.php?event=sed_sf&step=get_section_data&data-id=cf&section=" + section, {},
+					function(result)
 						{
-					for( x = 1; x <= _sed_cf_max ; x++ )
-						{
-						var hide  = result.substring( x-1 , x );
-						var para = 'p:has(label[for=custom' + _sed_cf_char + x + '])';
-						if( hide == '1' )
-							$(para).hide();
-						else
-							$(para).show();
-						}
-							} ,
-						'string'
-						);
-					}
+						for( x = 1; x <= _sed_cf_max ; x++ )
+							{
+							var hide  = result.substring( x-1 , x );
+							var para = 'p:has(label[for=custom' + _sed_cf_char + x + '])';
+							if( hide == '1' )
+								$(para).hide();
+							else
+								$(para).show();
+							}
+						} ,
+					'string'
+					);
 				}
+			}
 
-			function _sed_sf_on_section_change()
+		function _sed_sf_on_section_change()
+			{
+			_sed_sf.on_section_change( $("#section").val() );
+			}
+
+		$(document).ready
+			(
+			function()
 				{
-				_sed_sf.on_section_change( $("#section").val() );
+				_sed_sf_on_section_change();
+				$("#advanced").show();
 				}
-
-			$(document).ready
-				(
-				function()
-					{
-					_sed_sf_on_section_change();
-					$("#advanced").show();
-					}
-				);
+			);
 js;
 	exit();
 	}

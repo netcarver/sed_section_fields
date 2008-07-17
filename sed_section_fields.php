@@ -180,7 +180,7 @@ function _sed_sf_install_pref($key,$value,$type)
 	}
 function _sed_sf_remove_prefs()
 	{
-	safe_delete( 'txp_prefs' , "`event`='".sed_sf_prefix."'" , 1 );
+	safe_delete( 'txp_prefs' , "`event`='".sed_sf_prefix."'" );
 	}
 function _sed_sf_make_section_key( $section )
 	{

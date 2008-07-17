@@ -180,7 +180,7 @@ function _sed_sf_install_pref($key,$value,$type)
 	}
 function _sed_sf_remove_prefs()
 	{
-	safe_delete( 'txp_prefs' , "`event`='".sed_sf_prefix."'" );
+	safe_delete( 'txp_prefs' , "`event`='".sed_sf_prefix."'" , 1 );
 	}
 function _sed_sf_make_section_key( $section )
 	{
@@ -249,11 +249,8 @@ function _sed_sf_handle_prefs_pre( $event , $step )
 
 	if( version_compare( $prefs['version'] , '4.0.6' , '>=' ) )
 		{
-		if( !isset(@$prefs[_sed_sf_prefix_key('filter_limit')]) )
-			{
-			foreach( $sed_sf_prefs as $key=>$data )
-				_sed_sf_install_pref( $key , $data['val'] , $data['type'] );
-			}
+		foreach( $sed_sf_prefs as $key=>$data )
+			_sed_sf_install_pref( $key , $data['val'] , $data['type'] );
 		}
 	else
 		_sed_sf_remove_prefs();	

@@ -52,17 +52,6 @@ if( @txpinterface === 'admin' )
 		'alter_section_tab'	=> array( 'type'=>'yesnoradio' , 'val'=>'0' ) ,
 		'filter_limit' 		=> array( 'type'=>'text_input' , 'val'=>'18' ) ,
 		);
-	if( version_compare( $prefs['version'] , '4.0.6' , '>=' ) )
-		{
-		foreach( $sed_sf_prefs as $key=>$data )
-			_sed_sf_install_pref( $key , $data['val'] , $data['type'] );
-		}
-	else
-		{
-		# Kill off old prefs if upgrading plugin on old txp...
-		if( $event==='prefs' && $step==='advanced_prefs' ) 
-			_sed_sf_remove_prefs();	
-		}
 
 	#===========================================================================
 	#	Shorthand for storage in prefs...
@@ -84,6 +73,7 @@ if( @txpinterface === 'admin' )
 	register_callback( '_sed_sf_handle_section_post' , 'section' );
 	register_callback( '_sed_sf_section_markup' ,      'section' , '' , 1 );
 	register_callback( '_sed_sf_xml_server'     ,      'sed_sf' );
+	register_callback( '_sed_sf_handle_prefs_pre' , 'prefs' , 'advanced_prefs' , 1 );
 
 	#===========================================================================
 	#	Serve resource requests...
@@ -112,6 +102,7 @@ if( @txpinterface === 'admin' )
 			break;
 		}
 	}
+	
 
 function _sed_sf_get_max_field_number()
 	{
@@ -252,6 +243,21 @@ function _sed_sf_upgrade_storage_format()
 	}
 
 
+function _sed_sf_handle_prefs_pre( $event , $step )
+	{
+	global $prefs, $sed_sf_prefs;
+
+	if( version_compare( $prefs['version'] , '4.0.6' , '>=' ) )
+		{
+		if( !isset(@$prefs[_sed_sf_prefix_key('filter_limit')]) )
+			{
+			foreach( $sed_sf_prefs as $key=>$data )
+				_sed_sf_install_pref( $key , $data['val'] , $data['type'] );
+			}
+		}
+	else
+		_sed_sf_remove_prefs();	
+	}
 #===============================================================================
 #	Routines to handle admin presentation > sections tab...
 #===============================================================================

@@ -256,7 +256,7 @@ function _sed_sf_ps_extract( $section , $key )
 
 function _sed_sf_handle_section_post( $event , $step )
 	{
-	echo n."<script src='" .hu."textpattern/index.php?sed_resources=sed_sf_section_js' type='text/javascript'></script>".n;
+	echo n."<script src='".hu."?sed_resources=sed_sf_section_js' type='text/javascript'></script>".n;
 	_sed_sf_css();
 	}
 
@@ -374,7 +374,7 @@ function _sed_sf_inject_section_admin( $page )
 							'</div>';
 		$section_index = str_replace('"', '\"', $section_index);
 		$r = '<script type=\'text/javascript\'> var sed_sf_new_section = "#section-'.$newsection.'"; var sed_sf_section_index = "'.$section_index.'";</script>';
-		$f = '<script src=\''.hu.'textpattern/index.php?sed_resources=sed_sf_section_js\' type=\'text/javascript\'></script>';
+		$f = '<script src=\''.hu.'?sed_resources=sed_sf_section_js\' type=\'text/javascript\'></script>';
 		$page = str_replace( $f , $r.n.$f , $page );
 		}
 
@@ -474,7 +474,7 @@ function _sed_sf_handle_article_pre( $event , $step )
 	}
 function _sed_sf_handle_article_post( $event , $step )
 	{
-	echo n."<script src='" .hu."textpattern/index.php?sed_resources=sed_sf_write_js' type='text/javascript'></script>".n;
+	echo n."<script src='".hu."?sed_resources=sed_sf_write_js' type='text/javascript'></script>".n;
 	}
 
 function _sed_sf_build_static_section_list( $section , $row )

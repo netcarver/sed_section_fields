@@ -25,7 +25,7 @@ if( @txpinterface === 'admin' )
 	add_privs('sed_sf', '1,2,3,4,5,6');
 	add_privs('sed_sf.static_sections', '1' );	# which users always see all sections in the write-tab select box
 
-	global $_sed_sf_using_glz_custom_fields , $prefs, $textarray , $_sed_sf_l18n , $sed_sf_prefs , $_sed_sf_field_keys , $event;
+	global $_sed_sf_using_glz_custom_fields , $prefs, $textarray , $_sed_sf_l18n , $sed_sf_prefs , $_sed_sf_field_keys , $event , $step;
 
 	#===========================================================================
 	#	Strings for internationalisation...
@@ -60,7 +60,7 @@ if( @txpinterface === 'admin' )
 	else
 		{
 		# Kill off old prefs if upgrading plugin on old txp...
-		if( $event = 'prefs' ) 
+		if( $event==='prefs' && $step==='advanced_prefs' ) 
 			_sed_sf_remove_prefs();	
 		}
 
@@ -189,7 +189,7 @@ function _sed_sf_install_pref($key,$value,$type)
 	}
 function _sed_sf_remove_prefs()
 	{
-	safe_delete( 'txp_prefs' , "`event`='".sed_sf_prefix."'" , 1 );
+	safe_delete( 'txp_prefs' , "`event`='".sed_sf_prefix."'" );
 	}
 function _sed_sf_make_section_key( $section )
 	{

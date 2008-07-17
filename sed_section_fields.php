@@ -25,7 +25,7 @@ if( @txpinterface === 'admin' )
 	add_privs('sed_sf', '1,2,3,4,5,6');
 	add_privs('sed_sf.static_sections', '1' );	# which users always see all sections in the write-tab select box
 
-	global $_sed_sf_using_glz_custom_fields , $prefs, $textarray , $_sed_sf_l18n , $sed_sf_prefs , $_sed_sf_field_keys;
+	global $_sed_sf_using_glz_custom_fields , $prefs, $textarray , $_sed_sf_l18n , $sed_sf_prefs , $_sed_sf_field_keys , $event;
 
 	#===========================================================================
 	#	Strings for internationalisation...
@@ -52,8 +52,17 @@ if( @txpinterface === 'admin' )
 		'alter_section_tab'	=> array( 'type'=>'yesnoradio' , 'val'=>'0' ) ,
 		'filter_limit' 		=> array( 'type'=>'text_input' , 'val'=>'18' ) ,
 		);
-	foreach( $sed_sf_prefs as $key=>$data )
-		_sed_sf_install_pref( $key , $data['val'] , $data['type'] );
+	if( version_compare( $prefs['version'] , '4.0.6' , '>=' ) )
+		{
+		foreach( $sed_sf_prefs as $key=>$data )
+			_sed_sf_install_pref( $key , $data['val'] , $data['type'] );
+		}
+	else
+		{
+		# Kill off old prefs if upgrading plugin on old txp...
+		if( $event = 'prefs' ) 
+			_sed_sf_remove_prefs();	
+		}
 
 	#===========================================================================
 	#	Shorthand for storage in prefs...
@@ -180,7 +189,7 @@ function _sed_sf_install_pref($key,$value,$type)
 	}
 function _sed_sf_remove_prefs()
 	{
-	safe_delete( 'txp_prefs' , "`event`='".sed_sf_prefix."'" );
+	safe_delete( 'txp_prefs' , "`event`='".sed_sf_prefix."'" , 1 );
 	}
 function _sed_sf_make_section_key( $section )
 	{
@@ -359,7 +368,7 @@ function _sed_sf_inject_section_admin( $page )
 			$newsection = ps('name');
 
 		$filter = '';
-		$limit = $prefs[ _sed_sf_prefix_key('filter_limit') ];
+		$limit = @$prefs[ _sed_sf_prefix_key('filter_limit') ];
 		if( !is_numeric( $limit ) )
 			$limit = 18;
 		if( $c >= $limit )
@@ -581,7 +590,11 @@ function _sed_sf_section_js()
 		}
 js;
 
-	if( $prefs[_sed_sf_prefix_key('alter_section_tab')] == '1' )
+	#	Old versions can't handle the re-arranged screen!
+	if( version_compare( $prefs['version'] , '4.0.6' , '<' ) )
+		exit();
+
+	if( @$prefs[_sed_sf_prefix_key('alter_section_tab')] == '1' )
 	echo <<<js
 	/*
 	Idea based on "hide all except one" jQuery code by Charles Stuart...

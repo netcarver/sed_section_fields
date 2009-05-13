@@ -274,15 +274,7 @@ function _sed_sf_handle_section_post( $event , $step )
 
 function _sed_sf_showhide_radio($field, $var, $tabindex = '', $id = '')
 	{
-	global $mlp;
-
-	$vals = array
-		(
-		'0' => $mlp->gTxt('show'),
-		'1' => $mlp->gTxt('hide')
-		);
-
-	return sed_lib_radio_set( $vals , $field , $var , $tabindex , $id );
+	return sed_lib_radio_set( '' , $field , $var , $tabindex , $id );
 	}
 
 function _sed_sf_inject_section_admin( $page )

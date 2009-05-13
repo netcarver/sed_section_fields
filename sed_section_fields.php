@@ -320,7 +320,10 @@ function _sed_sf_inject_section_admin( $page )
 			$data = _sed_sf_get_data( $name );
 			$data_array = sed_lib_extract_name_value_pairs( $data );
 
-			$f = '<input type="text" name="name" value="' . $name . '" size="20" class="edit" tabindex="1" /></td></tr>'. n.n . '<tr><td class="noline" style="text-align: right; vertical-align: middle;">' . gTxt('section_longtitle') . ': </td><td class="noline"><input type="text" name="title" value="' . $title . '" size="20" class="edit" tabindex="1" /></td></tr>';
+			if( version_compare( $prefs['version'] , '4.0.8' , '>=' ) )
+				$f = '<input type="text" value="' . $name . '" name="name" size="20" class="edit" tabindex="1" /></td></tr>'. n.n . '<tr><td class="noline" style="text-align: right; vertical-align: middle;">' . gTxt('section_longtitle') . ': </td><td class="noline"><input type="text" value="' . $title . '" name="title" size="20" class="edit" tabindex="1" /></td></tr>';
+			else
+				$f = '<input type="text" name="name" value="' . $name . '" size="20" class="edit" tabindex="1" /></td></tr>'. n.n . '<tr><td class="noline" style="text-align: right; vertical-align: middle;">' . gTxt('section_longtitle') . ': </td><td class="noline"><input type="text" name="title" value="' . $title . '" size="20" class="edit" tabindex="1" /></td></tr>';
 
 			# Insert custom field visibility controls...
 			$cf_names = @$data_array['cf'];

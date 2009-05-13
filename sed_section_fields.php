@@ -72,7 +72,7 @@ if( @txpinterface === 'admin' )
 	register_callback( '_sed_sf_handle_article_post' , 'article' );
 	register_callback( '_sed_sf_handle_section_post' , 'section' );
 	register_callback( '_sed_sf_section_markup' ,      'section' , '' , 1 );
-	register_callback( '_sed_sf_xml_server'     ,      'sed_sf' );
+	register_callback( '_sed_sf_server'     ,      'sed_sf' );
 	register_callback( '_sed_sf_handle_prefs_pre' , 'prefs' , 'advanced_prefs' , 1 );
 
 	#===========================================================================
@@ -442,7 +442,7 @@ function _sed_sf_update_section_field_data()
 #===============================================================================
 #	Routines to handle admin content > write tab...
 #===============================================================================
-function _sed_sf_xml_serve_section_data( $event , $step )
+function _sed_sf_serve_section_data( $event , $step )
 	{
 	$result  = '';
 	$section = gps( 'section' );
@@ -458,7 +458,7 @@ function _sed_sf_xml_serve_section_data( $event , $step )
 
 	return $result;
 	}
-function _sed_sf_xml_server( $event , $step )
+function _sed_sf_server( $event , $step )
 	{
 	while (@ob_end_clean());
 	header('Content-Type: text/plain; charset=utf-8');
@@ -467,7 +467,7 @@ function _sed_sf_xml_server( $event , $step )
 	switch( $step )	# step selects among possible content types...
 		{
 		case 'get_section_data' :
-			$r =  _sed_sf_xml_serve_section_data( $event , $step );
+			$r =  _sed_sf_serve_section_data( $event , $step );
 			break;
 		default:
 			$r = '';

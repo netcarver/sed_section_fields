@@ -32,8 +32,8 @@ if( @txpinterface === 'admin' )
 	#===========================================================================
 	$_sed_sf_l18n = array(
 		'write_tab_heading' 	=> 'Write Tab Fields...',
-		'hide_cf' 				=> '{global_label} (#{cfnum})',
-		'hide_section'			=> 'Hide from non-publishers?',
+	'hide_cf' 				=> '<strong>{global_label}:</strong> Hide field#{cfnum}?',
+	'hide_section'			=> 'Treat as a static section?',
 		'hide_all_text'			=> 'Hide all?',
 		'show_all_text'			=> 'Show all?',
 		'alter_section_tab'		=> 'Alter Presentation > Section tab?',

@@ -1,7 +1,7 @@
 <?php
 
 $plugin['name'] = 'sed_section_fields';
-$plugin['version'] = '0.4';
+$plugin['version'] = '0.5';
 $plugin['author'] = 'Netcarver';
 $plugin['author_uri'] = 'http://txp-plugins.netcarving.com';
 $plugin['description'] = 'Provides admin interface field customisation on a per-section basis.';
@@ -760,6 +760,11 @@ Change 'your-site-name-here' to the name of your local site.
 
 
 h2(#changelog). Change Log
+
+h3. v0.5
+
+* Support for Txp 4.08
+* Updates to default labels on the presentation > sections tab
 
 h3. v0.4
 

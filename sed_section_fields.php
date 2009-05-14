@@ -551,7 +551,7 @@ function _sed_sf_section_js()
 		{
 		for( x = 1; x <= _sed_cf_max ; x++ )
 			{
-			var name = "input[@name='" + section + '_cf_' + x + "_visible']:nth(" + pos + ")";
+			var name = "input[name='" + section + '_cf_' + x + "_visible']:nth(" + pos + ")";
 			$(name).attr("checked","checked");
 			}
 		}

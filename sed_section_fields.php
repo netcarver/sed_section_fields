@@ -25,7 +25,7 @@ if( @txpinterface === 'admin' )
 	add_privs('sed_sf', '1,2,3,4,5,6');
 	add_privs('sed_sf.static_sections', '1' );	# which users always see all sections in the write-tab select box
 
-	global $_sed_sf_using_glz_custom_fields , $prefs, $textarray , $_sed_sf_l18n , $sed_sf_prefs , $_sed_sf_field_keys , $event , $step;
+	global $prefs, $textarray , $_sed_sf_l18n , $sed_sf_prefs , $_sed_sf_field_keys , $event , $step;
 
 	#===========================================================================
 	#	Strings for internationalisation...
@@ -59,11 +59,6 @@ if( @txpinterface === 'admin' )
 	$_sed_sf_field_keys = array(
 		'kw'=>'keywords' , 'of'=>'override-form' , 'ai'=>'article-image' , 'uot'=>'url-title'
 		);
-
-	#===========================================================================
-	#	glz_custom_fields present or not?
-	#===========================================================================
-	$_sed_sf_using_glz_custom_fields = load_plugin('glz_custom_fields');
 
 	#===========================================================================
 	#	Textpattern event handlers...
@@ -129,32 +124,6 @@ function _sed_sf_get_max_field_number()
 		}
 
 	return $max;
-	}
-
-function _sed_sf_get_cf_char()
-	{
-	static $c = false;
-	
-	if( false === $c )
-		{
-		#	glz_custom_fields present or not?
-		global $_sed_sf_using_glz_custom_fields;
-
-		$c = '-';
-		
-		if( $_sed_sf_using_glz_custom_fields )
-			{
-			#	Now have to check for the change in markup from 1.1.3 to 1.2!			
-			global $plugins_ver;
-			$glz_ver = @$plugins_ver['glz_custom_fields'];
-			
-			if( version_compare( $glz_ver , '1.2' , '<') ) 
-				$c = '_';
-			}
-		}
-	
-	#echo br , 'Cf character [' , $c , ']';
-	return $c;
 	}
 
 
@@ -671,10 +640,8 @@ js;
 function _sed_sf_write_js()
 	{
 	_sed_sf_js_headers();
-	$c = _sed_sf_get_cf_char();
 	$max = _sed_sf_get_max_field_number();
 	echo <<<js
-		var _sed_cf_char           = "$c";
 		var _sed_cf_max            = $max;
 		var _sed_sf =
 			{
@@ -687,11 +654,18 @@ function _sed_sf_write_js()
 						for( x = 1; x <= _sed_cf_max ; x++ )
 							{
 							var hide  = result.substring( x-1 , x );
-							var para = 'p:has(label[for=custom' + _sed_cf_char + x + '])';
+							var para1 = 'p:has(label[for=custom_' + x + '])';
+							var para2 = 'p:has(label[for=custom-' + x + '])';
 							if( hide == '1' )
-								$(para).hide();
+								{
+								$(para1).hide();
+								$(para2).hide();
+								}
 							else
-								$(para).show();
+								{
+								$(para1).show();
+								$(para2).show();
+								}
 							}
 						} ,
 					'string'

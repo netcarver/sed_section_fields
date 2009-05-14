@@ -579,7 +579,7 @@ js;
 		else
 			{
 			list.find('li').hide();
-			var select = "li[@id^='sed_section-"+filter+"']";
+			var select = "li[id^='sed_section-"+filter+"']";
 			list = list.find( select );
 			list.show();
 			}

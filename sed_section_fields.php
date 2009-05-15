@@ -272,8 +272,7 @@ function _sed_sf_inject_section_admin( $page )
 		while( $row = nextRow($rows) )
 			{
 			$name  = $row['name'];
-			$title = $row['title'];
-			$title = strtr( $title , array( "'"=>'&#39;' , '"'=>'&#34;' ) );
+			$title = htmlspecialchars( $row['title'] );
 
 			# Build the list of sections for the section-tab index
 			$section_index .= '<li id="sed_section-'.$name.'"><a href="#section-'.$name.'" class="sed_sf_hide_all_but_one">'.$name.'</a></li>';

@@ -729,8 +729,9 @@ h2(#changelog). Change Log
 
 h3. v0.5
 
-* Support for Txp 4.08
+* Support for Txp 4.08 & Txp 4.09
 * Updates to default labels on the presentation > sections tab
+* Now works with glz_custom_fields v1.2 and below
 
 h3. v0.4
 

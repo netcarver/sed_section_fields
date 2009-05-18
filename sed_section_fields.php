@@ -71,6 +71,7 @@ if( @txpinterface === 'admin' )
 	register_callback( '_sed_sf_section_markup' , 'section' , '' , 1 );
 	register_callback( '_sed_sf_server' , 'sed_sf' );
 	register_callback( '_sed_sf_handle_prefs_pre' , 'prefs' , 'advanced_prefs' , 1 );
+	register_callback( '_sed_sf_handle_prefs_pre' , 'prefs' , 'advanced_prefs_save' , 1 );
 
 	#===========================================================================
 	#	Serve resource requests...

@@ -32,8 +32,8 @@ if( @txpinterface === 'admin' )
 	#===========================================================================
 	$_sed_sf_l18n = array(
 		'write_tab_heading' 	=> 'Write Tab Fields...',
-	'hide_cf' 				=> '<strong>{global_label}:</strong> Hide field#{cfnum}?',
-	'hide_section'			=> 'Treat as a static section?',
+		'hide_cf' 				=> '<strong>{global_label}:</strong> Hide field#{cfnum}?',
+		'hide_section'			=> 'Treat as a static section?',
 		'hide_all_text'			=> 'Hide all?',
 		'show_all_text'			=> 'Show all?',
 		'alter_section_tab'		=> 'Alter Presentation > Section tab?',
@@ -41,6 +41,7 @@ if( @txpinterface === 'admin' )
 		'filter_limit'			=> 'Show section index filter after how many sections?',
 		'hide'					=> 'Hide',
 		'show'					=> 'Show',
+		'default_showhide'		=> 'Hide custom fields by default?',
 		);
 	$mlp = new sed_lib_mlp( 'sed_section_fields' , $_sed_sf_l18n , '' , 'admin' );
 
@@ -51,6 +52,7 @@ if( @txpinterface === 'admin' )
 		(
 		'alter_section_tab'	=> array( 'type'=>'yesnoradio' , 'val'=>'0' ) ,
 		'filter_limit' 		=> array( 'type'=>'text_input' , 'val'=>'18' ) ,
+		'default_showhide'  => array( 'type'=>'yesnoradio' , 'val'=>'1' ) ,
 		);
 
 	#===========================================================================
@@ -63,11 +65,11 @@ if( @txpinterface === 'admin' )
 	#===========================================================================
 	#	Textpattern event handlers...
 	#===========================================================================
-	register_callback( '_sed_sf_handle_article_pre' ,  'article' , '' , 1 );
+	register_callback( '_sed_sf_handle_article_pre' , 'article' , '' , 1 );
 	register_callback( '_sed_sf_handle_article_post' , 'article' );
 	register_callback( '_sed_sf_handle_section_post' , 'section' );
-	register_callback( '_sed_sf_section_markup' ,      'section' , '' , 1 );
-	register_callback( '_sed_sf_server'     ,      'sed_sf' );
+	register_callback( '_sed_sf_section_markup' , 'section' , '' , 1 );
+	register_callback( '_sed_sf_server' , 'sed_sf' );
 	register_callback( '_sed_sf_handle_prefs_pre' , 'prefs' , 'advanced_prefs' , 1 );
 
 	#===========================================================================
@@ -155,7 +157,6 @@ function _sed_sf_make_section_key( $section )
 	{
 	return 'sed_sf_' . $section . '_field_labels';
 	}
-
 function _sed_sf_store_data( $section , $value )
 	{
 	global $prefs;
@@ -163,15 +164,24 @@ function _sed_sf_store_data( $section , $value )
 	set_pref( doSlash( $key ) , doSlash( $value ) , 'sed_sf' , 2 );
 	$prefs[ $key ] = $value;
 	}
-
+function _sed_sf_make_default_cf_visibilities()
+	{
+	global $prefs;
+	$key = _sed_sf_prefix_key('default_showhide');
+	$key = ( array_key_exists($key,$prefs) ) ? $prefs[$key] : '1' ;
+	return 'cf="'.str_repeat($key,_sed_sf_get_max_field_number()).'";' ;
+	}
 function _sed_sf_get_data( $section )
 	{
 	global $prefs;
 
 	$key = _sed_sf_make_section_key( $section );
-	return ( isset( $prefs[ $key ] ) ) ? $prefs[ $key ] : '' ;
+	if ( isset( $prefs[ $key ] ) ) 
+		$result = $prefs[ $key ];
+	else
+		$result = _sed_sf_make_default_cf_visibilities();
+	return $result;
 	}
-
 function _sed_sf_for_each_section_cb( $fn , $fn_data='', $where = "name != 'default'" )
 	{
 	#	Iterates over the sections, calling the given function to process them.
@@ -191,7 +201,6 @@ function _sed_sf_for_each_section_cb( $fn , $fn_data='', $where = "name != 'defa
 
 	return true;
 	}
-
 function _sed_sf_upgrade_storage_format()
 	{
 	function _sed_sf_upgrade_section_data( $section )
@@ -210,8 +219,6 @@ function _sed_sf_upgrade_storage_format()
 
 	_sed_sf_for_each_section_cb( '_sed_sf_upgrade_section_data' );
 	}
-
-
 function _sed_sf_handle_prefs_pre( $event , $step )
 	{
 	global $prefs, $sed_sf_prefs;
@@ -224,6 +231,8 @@ function _sed_sf_handle_prefs_pre( $event , $step )
 	else
 		_sed_sf_remove_prefs();	
 	}
+
+
 #===============================================================================
 #	Routines to handle admin presentation > sections tab...
 #===============================================================================
@@ -360,6 +369,29 @@ function _sed_sf_section_markup( $event , $step )
 	{
 	if( $step == 'section_save' )
 		_sed_sf_update_section_field_data();
+	
+	if( $step == 'section_create' )
+		{
+		$newsection = gps( 'name' );
+		$data = _sed_sf_make_default_cf_visibilities();
+		_sed_sf_store_data( $newsection , $data );
+		}
+
+	if( $step == 'section_delete' )
+		{
+		$section = gps( 'name' );
+		$count = safe_count('textpattern', "section = '".doSlash($section)."'");
+
+		if( $count === 0 )
+			{
+			$key = _sed_sf_make_section_key( $section );
+			if ( isset( $prefs[ $key ] ) )
+				{
+				$key = doSlash($key);
+				safe_delete('txp_prefs', "`name`='$key'" , 1);
+				}
+			}
+		}
 
 	ob_start( '_sed_sf_inject_section_admin' );
 	}

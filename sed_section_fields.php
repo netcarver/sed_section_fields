@@ -763,6 +763,7 @@ h3. v0.5
 * Support for Txp 4.08 & Txp 4.09
 * Updates to default labels on the presentation > sections tab
 * Now works with glz_custom_fields v1.2 and below
+* Added preference to control default show/hide status of custom fields
 
 h3. v0.4
 

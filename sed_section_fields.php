@@ -14,8 +14,7 @@ $plugin['order'] = 5;
 
 require_plugin('sed_plugin_library');
 
-if( !defined('sed_sf_prefix') )
-	define( 'sed_sf_prefix' , 'sed_sf' );
+defined('sed_sf_prefix') or define( 'sed_sf_prefix' , 'sed_sf' );
 
 #===============================================================================
 #	Admin interface features...
@@ -147,6 +146,7 @@ function _sed_sf_install_pref($key,$value,$type)
 		$prefs[$k] = $value;
 		}
 	# Insert the preference strings for non-mlp sites...
+	$k = strtolower($k);	# needed as txp's gtxt routine uses lower-case matching
 	if( !array_key_exists( $k , $textarray ) )
 		$textarray[$k] = $_sed_sf_l18n[$key];
 	}
@@ -171,6 +171,22 @@ function _sed_sf_make_default_cf_visibilities()
 	$key = _sed_sf_prefix_key('default_showhide');
 	$key = ( array_key_exists($key,$prefs) ) ? $prefs[$key] : '1' ;
 	return 'cf="'.str_repeat($key,_sed_sf_get_max_field_number()).'";' ;
+	}
+function _sed_sf_extend_cf_data( $initial_data )
+	{
+	$len = strlen( $initial_data );
+	$fields = _sed_sf_get_max_field_number();
+	
+	$result = $initial_data;
+	if( $len < $fields )
+		{
+		global $prefs;
+		$key = _sed_sf_prefix_key('default_showhide');
+		$key = ( array_key_exists($key,$prefs) ) ? $prefs[$key] : '1' ;
+		$result = $initial_data . str_repeat($key,($fields-$len));
+		}
+		
+	return $result;
 	}
 function _sed_sf_get_data( $section )
 	{
